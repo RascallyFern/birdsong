@@ -1,13 +1,8 @@
 package main.java.cnn;
 import main.java.cnn.layers.ConvolutionLayer;
 
-import java.util.Random;
-
 public class Main {
     public static void main(String[] args) {
-        Random r = new Random();
-        double num = r.nextDouble();
-
         double[][][] input = new double[1][8][8];
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
