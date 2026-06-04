@@ -2,7 +2,7 @@ package main.java.fft;
 
 public class Main {
     public static void main(String[] args) {
-        WavReader wr = new WavReader("./bluetit.wav");
+        WavReader wr = new WavReader("./BlueTitWav.wav");
         wr.readSamples();
 
         double[] samples = wr.subSample(0, (int) Math.pow(2, 10));
@@ -24,6 +24,8 @@ public class Main {
             double frequency = wr.getFormat().getSampleRate() / samples.length;
             System.out.println(frequency * (i + 1));
         }
+
+        wr.createImage(512);
 
     }
 }

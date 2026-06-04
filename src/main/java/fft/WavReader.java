@@ -1,6 +1,7 @@
 package main.java.fft;
 
 import javax.sound.sampled.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 
 public class WavReader {
@@ -10,10 +11,24 @@ public class WavReader {
     private AudioFormat format;
     private SourceDataLine line;
 
+    private int FMIN;
+    private int FMAX;
+
     private double[] samples;
+    private double[][] image;
+    private double[] spectrum;
+    private BufferedImage spectrogram;
+
+    private int spectrumFrames;
+    private int hopSize;
+    private int windowSize;
 
     public WavReader(String fileName) {
         file = new File(fileName);
+        FMIN = 0;
+        FMAX = -1;
+        hopSize = 1024;
+        windowSize = 2048;
         init();
     }
 
@@ -132,6 +147,59 @@ public class WavReader {
         }
 
         return line.getLongFramePosition() / format.getSampleRate();
+    }
+
+    public void createImage(int frameCount) {
+        double maxMag = 0f;
+
+        for (int i = 0; i < frameCount; i++) {
+            double[] window = new double[windowSize];
+            System.arraycopy(samples, i * hopSize, window, 0, windowSize);
+            createSpectrum(frameCount, window);
+
+            for (int f = 0; f < spectrum.length; f++) {
+                image[f][i] = spectrum[f];
+                if (spectrum[f] > maxMag) {
+                    maxMag = spectrum[f];
+                }
+            }
+        }
+
+        spectrogram = new BufferedImage(frameCount, spectrum.length, BufferedImage.TYPE_INT_RGB);
+
+        for (int i = 0; i < image.length; i++) {
+            for (int j = 0; j < image[i].length; j++) {
+                image[i][j] /= maxMag;
+                int grey = (int) (image[i][j] * 255);
+                int rgb = (grey << 16) | (grey << 8) | grey;
+                spectrogram.setRGB(j, image.length - i - 1, rgb);
+            }
+        }
+    }
+
+    public void createSpectrum(int frameCount, double[] samples) {
+        int n = samples.length;
+        int sampleRate = (int) getFormat().getSampleRate();
+        int kMax = Math.min(FMAX * n / sampleRate, (n / 2));
+        int kMin = Math.max((FMIN * n / sampleRate), 0);
+        double hann = 0.5 * (1 - Math.cos(2 * Math.PI / (samples.length - 1)));
+        kMax = (kMax <= 0 ? n / 2 : kMax);
+
+        image = new double[kMax - kMin][frameCount];
+        Complex[] complexSamples = new Complex[samples.length];
+
+        for (int i = 0; i < samples.length; i++) {
+            complexSamples[i] = new Complex(samples[i] * hann, 0);
+        }
+
+        Complex[] complexSpectrum = FFT.fft(complexSamples);
+        spectrum = new double[kMax - kMin];
+
+        for (int i = kMin, idx = 0; i < kMax; i++, idx++) {
+            spectrum[idx] = Math.log(1 + complexSpectrum[i].mag());
+        }
+
+        spectrumFrames = frameCount;
     }
 
     public AudioFormat getFormat() {
