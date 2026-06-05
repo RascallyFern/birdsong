@@ -1,4 +1,4 @@
-package main.java.cnn.layers;
+package main.java.cnn;
 
 public class Activation {
     public static double[][][] relu(double[][][] input) {

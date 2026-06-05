@@ -1,4 +1,5 @@
 package main.java.cnn.layers;
+import java.util.Arrays;
 import java.util.Random;
 
 public class ConvolutionLayer {
@@ -9,7 +10,7 @@ public class ConvolutionLayer {
     private double[][][] input;
     private double[][][] output;
 
-    private double bias = 0;
+    private double[] bias;
     private int inputSize, outputSize, filterSize, filterNum, channels, stride;
 
     Random r = new Random();
@@ -21,10 +22,11 @@ public class ConvolutionLayer {
         this.channels = channels;
         this.stride = stride;
         this.outputSize = ((inputSize - filterSize) / stride) + 1;
-        initFilters(filterNum);
+        bias = new double[filterNum];
+        initLayer(filterNum);
     }
 
-    private void initFilters(int filterNum) {
+    private void initLayer(int filterNum) {
         filters = new double[filterNum][channels][filterSize][filterSize];
 
         for (int filter = 0; filter < filters.length; filter++) {
@@ -57,7 +59,7 @@ public class ConvolutionLayer {
                         }
                     }
 
-                    output[f][y/stride][x/stride] = sum + bias;
+                    output[f][y/stride][x/stride] = sum + bias[f];
 
                 }
             }
@@ -69,7 +71,7 @@ public class ConvolutionLayer {
         return filters;
     }
 
-    public double getBias() {
+    public double[] getBias() {
         return bias;
     }
 

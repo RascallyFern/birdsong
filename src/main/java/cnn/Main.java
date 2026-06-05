@@ -1,9 +1,6 @@
 package main.java.cnn;
-import main.java.cnn.layers.Activation;
 import main.java.cnn.layers.ConvolutionLayer;
 import main.java.cnn.layers.MaxPoolLayer;
-
-import java.util.Arrays;
 import java.util.Random;
 
 public class Main {
@@ -27,7 +24,5 @@ public class Main {
         p1.forwardPass(Activation.relu(c1.getOutput()));
         c2.forwardPass(Activation.relu(p1.getOutput()));
         p2.forwardPass(Activation.relu(c2.getOutput()));
-
-
     }
 }
