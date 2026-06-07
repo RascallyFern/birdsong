@@ -1,6 +1,7 @@
 # IntelliJ
 .idea/
 *.iml
+bluetit.wav
 
 # Build
 out/

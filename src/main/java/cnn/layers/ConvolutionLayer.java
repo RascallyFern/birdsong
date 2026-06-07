@@ -13,7 +13,7 @@ public class ConvolutionLayer {
     private double[] bias;
     private int inputSize, outputSize, filterSize, filterNum, channels, stride;
 
-    Random r = new Random();
+    private Random r = new Random();
 
     public ConvolutionLayer(int inputSize, int channels, int filterNum, int filterSize, int stride) {
         this.inputSize = inputSize;
@@ -22,18 +22,25 @@ public class ConvolutionLayer {
         this.channels = channels;
         this.stride = stride;
         this.outputSize = ((inputSize - filterSize) / stride) + 1;
+
         bias = new double[filterNum];
+        Arrays.fill(bias, 0.0);
+
         initLayer(filterNum);
     }
 
     private void initLayer(int filterNum) {
         filters = new double[filterNum][channels][filterSize][filterSize];
 
+        // He init for weights
+        double fanIn = channels * filterSize * filterSize;
+        double stdv = Math.sqrt(2.0 / fanIn);
+
         for (int filter = 0; filter < filters.length; filter++) {
             for (int z = 0; z < channels; z++) {
                 for (int y = 0; y < filterSize; y++) {
                     for (int x = 0; x < filterSize; x++) {
-                        filters[filter][z][y][x] = (r.nextDouble() * 2) - 1;
+                        filters[filter][z][y][x] = (r.nextGaussian() * stdv);
                     }
                 }
             }
@@ -46,10 +53,11 @@ public class ConvolutionLayer {
         output = new double[filterNum][outputSize][outputSize];
 
         for (int f = 0; f < filterNum; f++) {
-            for (int y = 0; (y/stride) < outputSize; y += stride) {
-                for (int x = 0; (x/stride) < outputSize; x += stride) {
-
+            for (int outY = 0; outY < outputSize; outY++) {
+                int y = outY * stride;
+                for (int outX = 0; outX < outputSize; outX++) {
                     double sum = 0;
+                    int x = outX * stride;
 
                     for (int c = 0; c < channels; c++) {
                         for (int fY = 0; fY < filterSize; fY++) {
@@ -59,7 +67,7 @@ public class ConvolutionLayer {
                         }
                     }
 
-                    output[f][y/stride][x/stride] = sum + bias[f];
+                    output[f][outY][outX] = sum + bias[f];
 
                 }
             }

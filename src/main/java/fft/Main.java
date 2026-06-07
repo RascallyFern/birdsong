@@ -14,9 +14,10 @@ public class Main {
         }
 
         Complex[] complexSpectrum = FFT.fft(complexSamples);
-        double[] spectrum = new double[complexSpectrum.length];
+        double[] spectrum = new double[complexSpectrum.length / 2];
 
-        for (int i = 0; i < complexSpectrum.length; i++) {
+        //nyquists so only up to half
+        for (int i = 0; i < complexSpectrum.length / 2; i++) {
             spectrum[i] = complexSpectrum[i].mag();
         }
 

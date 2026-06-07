@@ -26,4 +26,13 @@ public class Activation {
 
         return output;
     }
+
+    public static double[] sigmoid(double[] input) {
+        double[] output = new double[input.length];
+        for (int i = 0; i < input.length; i++) {
+            output[i] = 1 / (1 + (Math.pow(Math.E, -input[i])));
+        }
+
+        return output;
+    }
 }

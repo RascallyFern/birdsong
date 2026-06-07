@@ -4,7 +4,6 @@
 A Convolutional Neural Network from scratch in Java to classify birdsong for my Computer Science NEA.
 
 ## Features
-- STFT preprocessing
 - Audio Augmentation for larger + more diverse training dataset
 
 ## Nice-to-haves

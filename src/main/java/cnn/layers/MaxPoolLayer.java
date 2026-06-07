@@ -43,5 +43,9 @@ public class MaxPoolLayer {
         return outputSize;
     }
 
+    public int getFlattenedSize() {
+        return channels * outputSize * outputSize;
+    }
+
     public int getFilterCount() { return channels; }
 }
