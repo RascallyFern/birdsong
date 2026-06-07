@@ -34,7 +34,7 @@ public class DenseLayer {
         }
     }
 
-    public void forwardPass(double[] input) {
+    public double[] forwardPass(double[] input) {
         this.input = input;
 
         for (int i = 0; i < output.length; i++) {
@@ -46,10 +46,13 @@ public class DenseLayer {
 
             output[i] = sum + bias[i];
         }
+
+        return output;
     }
 
-    public void forwardPass(double[][][] input) {
+    public double[] forwardPass(double[][][] input) {
         forwardPass(flatten(input));
+        return output;
     }
 
     private double[] flatten(double[][][] input) {

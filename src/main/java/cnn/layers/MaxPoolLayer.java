@@ -11,11 +11,11 @@ public class MaxPoolLayer {
         this.filterSize = filterSize;
         this.stride = (stride > 0 ? stride : filterSize); // e.g. if -1 given then matches filter size
         this.outputSize = ((inputSize - filterSize) / this.stride) + 1;
+        output = new double[channels][outputSize][outputSize];
     }
 
-    public void forwardPass(double[][][] input) {
+    public double[][][] forwardPass(double[][][] input) {
         this.input = input;
-        output = new double[channels][outputSize][outputSize];
 
         for (int c = 0; c < channels; c++) {
             for (int y = 0; (y/stride) < outputSize; y += stride) {
@@ -33,6 +33,8 @@ public class MaxPoolLayer {
                 }
             }
         }
+
+        return output;
     }
 
     public double[][][] getOutput() {

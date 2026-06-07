@@ -22,6 +22,7 @@ public class ConvolutionLayer {
         this.channels = channels;
         this.stride = stride;
         this.outputSize = ((inputSize - filterSize) / stride) + 1;
+        output = new double[filterNum][outputSize][outputSize];
 
         bias = new double[filterNum];
         Arrays.fill(bias, 0.0);
@@ -47,10 +48,8 @@ public class ConvolutionLayer {
         }
     }
 
-    public void forwardPass(double[][][] input) {
+    public double[][][] forwardPass(double[][][] input) {
         this.input = input;
-
-        output = new double[filterNum][outputSize][outputSize];
 
         for (int f = 0; f < filterNum; f++) {
             for (int outY = 0; outY < outputSize; outY++) {
@@ -72,6 +71,8 @@ public class ConvolutionLayer {
                 }
             }
         }
+
+        return output;
     }
 
 
