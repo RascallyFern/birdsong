@@ -11,18 +11,14 @@ import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        int inputSize = 64, channels = 1;
+        Dataset train = new Dataset("./mnistcsv/mnist_train.csv");
+
+        System.out.println(Arrays.deepToString(train.getData()[0]));
+
+        int inputSize = 28, channels = 1;
         Random r = new Random();
 
         double[][][] input = new double[channels][inputSize][inputSize];
-
-        for (int c = 0; c < channels; c++) {
-            for (int y = 0; y < inputSize; y++) {
-                for (int x = 0; x < inputSize; x++) {
-                    input[c][y][x] = (r.nextDouble() - 0.5) * 2;
-                }
-            }
-        }
 
         ConvolutionLayer c1 = new ConvolutionLayer(inputSize, channels, 2, 3, 1);
         ReLU3D r1 = new ReLU3D();

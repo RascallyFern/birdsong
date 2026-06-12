@@ -5,9 +5,7 @@ import java.util.Random;
 
 public class DenseLayer {
 
-    private double[] input;
-    private double[] output;
-    private double[] bias;
+    private double[] input, output, bias;
     private double[][] weights;
     private int inputSize, outputSize;
 
