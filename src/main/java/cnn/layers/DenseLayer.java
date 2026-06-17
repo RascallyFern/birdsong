@@ -7,6 +7,7 @@ public class DenseLayer {
 
     private double[] input, output, bias;
     private double[][] weights;
+    private double[][][] input3D;
     private int inputSize, outputSize;
 
     private Random r = new Random();
@@ -49,6 +50,7 @@ public class DenseLayer {
     }
 
     public double[] forwardPass(double[][][] input) {
+        input3D = input;
         forwardPass(flatten(input));
         return output;
     }
@@ -65,6 +67,10 @@ public class DenseLayer {
         }
 
         return flattened;
+    }
+
+    private double[] backwardPass() {
+        return null;
     }
 
     public double[] getOutput() {

@@ -9,7 +9,7 @@ public class Dataset {
     private Scanner s, counter;
     private double[][][] data;
     private int[] label;
-    private int images, width, height;
+    private int imageCount, width, height;
 
     public Dataset(String dir) {
         try {
@@ -29,20 +29,20 @@ public class Dataset {
         width = Integer.parseInt(start[start.length - 1].split("x")[0]);
         height = Integer.parseInt(start[start.length - 1].split("x")[0]);
 
-        images = -1;
+        imageCount = -1;
         while (counter.hasNext()) {
             counter.nextLine();
-            images++;
+            imageCount++;
         }
 
-        label = new int[images];
-        data = new double[images][height][width];
+        label = new int[imageCount];
+        data = new double[imageCount][height][width];
 
         while (s.hasNext()) {
             split = s.nextLine().split(",");
             label[line] = Integer.parseInt(split[0]);
             for (int i = 0; i < split.length - 1; i++) {
-                data[line][(int) Math.floor((i) / height)][(i % width)] = Integer.parseInt(split[i + 1]);
+                data[line][(int) Math.floor((i) / height)][(i % width)] = (double) Integer.parseInt(split[i + 1]) / 255;
             }
             line++;
         }
@@ -54,5 +54,9 @@ public class Dataset {
 
     public double[][][] getData() {
         return data;
+    }
+
+    public int getImageCount() {
+        return imageCount;
     }
 }
