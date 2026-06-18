@@ -6,18 +6,24 @@ import main.java.cnn.layers.activation.ReLU1D;
 import main.java.cnn.layers.activation.ReLU3D;
 import main.java.cnn.layers.activation.Sigmoid1D;
 
+import java.util.Arrays;
+
 public class Main {
     public static void main(String[] args) {
         Dataset train = new Dataset("./mnistcsv/mnist_train.csv");
+        Dataset test = new Dataset("./mnistcsv/mnist_test.csv");
 
-        double[][][] images = train.getData();
-        int[] labels = train.getLabel();
-        int imageCount = train.getImageCount();
+        double[][][] trainImages = train.getData();
+        double[][][] testImages = test.getData();
+
+        int[] trainLabels = train.getLabel();
+        int[] testLabels = test.getLabel();
 
         int inputSize = 28;
+        int epochs = 10;
 
         double[][][] input = new double[1][inputSize][inputSize];
-        input[0] = images[0];
+        input[0] = trainImages[0];
 
         ConvolutionLayer c1 = new ConvolutionLayer(inputSize, 1, 4, 3, 1);
         ReLU3D r1 = new ReLU3D();
@@ -30,22 +36,54 @@ public class Main {
         DenseLayer d2 = new DenseLayer(d1.getOutputSize(), 10);
         Sigmoid1D s1 = new Sigmoid1D();
 
-        for (int i = 0; i < train.getImageCount(); i++) {
-            input[0] = images[i];
-            double[][][] x = input;
+        for (int e = 0; e < epochs; e++) {
+            for (int i = 0; i < train.getImageCount(); i++) {
+                input[0] = trainImages[i];
+                double[][][] x = input;
 
-            x = c1.forwardPass(x);
-            x = r1.forwardPass(x);
-            x = p1.forwardPass(x);
+                x = c1.forwardPass(x);
+                x = r1.forwardPass(x);
+                x = p1.forwardPass(x);
 
-            x = c2.forwardPass(x);
-            x = r2.forwardPass(x);
-            x = p2.forwardPass(x);
+                x = c2.forwardPass(x);
+                x = r2.forwardPass(x);
+                x = p2.forwardPass(x);
 
-            double[] y = d1.forwardPass(x);
-            y = r3.forwardPass(y);
-            y = d2.forwardPass(y);
-            y = s1.forwardPass(y);
+                double[] y = d1.forwardPass(x);
+                y = r3.forwardPass(y);
+                y = d2.forwardPass(y);
+                y = s1.forwardPass(y);
+
+                double bce = Functions.bce(y, trainLabels[i]);
+                y = s1.backwardPass(bce);
+                y = d2.backwardPass(y);
+                y = r3.backwardPass(y);
+                y = d1.backwardPass(y);
+
+            }
+
+            double avgAcc = 0;
+
+            for (int i = 0; i < test.getImageCount(); i++) {
+                input[0] = testImages[i];
+                double[][][] x = input;
+
+                x = c1.forwardPass(x);
+                x = r1.forwardPass(x);
+                x = p1.forwardPass(x);
+
+                x = c2.forwardPass(x);
+                x = r2.forwardPass(x);
+                x = p2.forwardPass(x);
+
+                double[] y = d1.forwardPass(x);
+                y = r3.forwardPass(y);
+                y = d2.forwardPass(y);
+                y = s1.forwardPass(y);
+
+                avgAcc += y[testLabels[i]];
+            }
+            System.out.println(avgAcc / testLabels.length);
         }
     }
 }

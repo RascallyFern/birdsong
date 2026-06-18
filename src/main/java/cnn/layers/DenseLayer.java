@@ -6,9 +6,10 @@ import java.util.Random;
 public class DenseLayer {
 
     private double[] input, output, bias;
+    private double[] dInput, dOutput;
     private double[][] weights;
-    private double[][][] input3D;
     private int inputSize, outputSize;
+    private double learningRate;
 
     private Random r = new Random();
 
@@ -20,6 +21,7 @@ public class DenseLayer {
 
         this.inputSize = inputSize;
         this.outputSize = outputSize;
+        learningRate = 0.001;
 
         Arrays.fill(bias, 0.0);
 
@@ -50,7 +52,6 @@ public class DenseLayer {
     }
 
     public double[] forwardPass(double[][][] input) {
-        input3D = input;
         forwardPass(flatten(input));
         return output;
     }
@@ -69,8 +70,36 @@ public class DenseLayer {
         return flattened;
     }
 
-    private double[] backwardPass() {
-        return null;
+    public double[] backwardPass(double[] dOutput) {
+        dInput = new double[inputSize];
+
+        double clip = 1;
+        for (int i = 0; i < dOutput.length; i++) {
+            dOutput[i] = (dOutput[i] > clip ? clip : dOutput[i]);
+            dOutput[i] = (dOutput[i] < -clip ? -clip : dOutput[i]);
+        }
+        this.dOutput = dOutput;
+
+        //w.r.t bias
+        for (int i = 0; i < outputSize; i++) {
+            bias[i] -= learningRate * dOutput[i];
+        }
+
+        //w.r.t input
+        for (int i = 0; i < inputSize; i++) {
+            for (int j = 0; j < outputSize; j++) {
+                dInput[i] += weights[j][i] * dOutput[j];
+            }
+        }
+
+        //w.r.t weights
+        for (int i = 0; i < outputSize; i++) {
+            for (int j = 0; j < inputSize; j++) {
+                weights[i][j] -= learningRate * dOutput[i] * input[j];
+            }
+        }
+
+        return dInput;
     }
 
     public double[] getOutput() {

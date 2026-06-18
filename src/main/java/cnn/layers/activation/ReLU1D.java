@@ -1,5 +1,7 @@
 package main.java.cnn.layers.activation;
 
+import java.util.Arrays;
+
 public class ReLU1D {
 
     private double[] input, dInput;
@@ -21,6 +23,12 @@ public class ReLU1D {
     }
 
     public double[] backwardPass(double[] dOutput) {
+
+        double clip = 1;
+        for (int i = 0; i < dOutput.length; i++) {
+            dOutput[i] = (dOutput[i] > clip ? clip : dOutput[i]);
+            dOutput[i] = (dOutput[i] < -clip ? -clip : dOutput[i]);
+        }
         this.dOutput = dOutput;
 
         for (int i = 0; i < size; i++) {
