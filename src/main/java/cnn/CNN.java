@@ -56,13 +56,13 @@ public class CNN {
         return y;
     }
 
-    private void backward(double[] predictions, int label) {
-        double[] x = predictions;
-        double[] loss = Functions.bceGradients(x, label);
-        x = s1.backwardPass(loss);
-        x = d2.backwardPass(x);
+    private void backward(double[] loss) {
+        double[] x = s1.backwardPass(loss);
+        x = d2.backwardPass1D(x);
         x = r3.backwardPass(x);
-        x = d1.backwardPass(x);
+
+        double[][][] y = d1.backwardPass3D(x);
+        y = p2.backwardPass(y);
     }
 
     public void train(int epochs) {
@@ -79,7 +79,35 @@ public class CNN {
 
             for (int i = 0; i < trainImages.length; i++) {
                 predictions = forward(trainImages[i]);
-                backward(predictions, trainLabels[i]);
+                backward(Functions.bceGradients(predictions, trainLabels[i]));
+            }
+            System.out.println("Label " + trainLabels[trainImages.length - 1] + ": " + Arrays.toString(predictions));
+        }
+    }
+
+    public void train(int epochs, int batchSize) {
+        //work in progress
+        double[] predictions = null;
+
+        for (int e = 0; e < epochs; e++) {
+            double avgAcc = 0;
+            double[] loss = new double[testLabels.length];
+
+            for (int i = 0; i < testImages.length; i++) {
+                predictions = forward(testImages[i]);
+                avgAcc += predictions[testLabels[i]];
+            }
+
+            System.out.println("Accuracy: " + (avgAcc / testLabels.length));
+
+            for (int i = 0; i < trainImages.length; i++) {
+                predictions = forward(trainImages[i]);
+                int count = 0;
+                for (double l : loss) {
+                    loss[count] += l;
+                    count++;
+                }
+                backward(Functions.bceGradients(predictions, trainLabels[i]));
             }
             System.out.println("Label " + trainLabels[trainImages.length - 1] + ": " + Arrays.toString(predictions));
         }

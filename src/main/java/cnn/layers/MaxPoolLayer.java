@@ -1,8 +1,8 @@
 package main.java.cnn.layers;
 
 public class MaxPoolLayer {
-    private double[][][] input;
-    private double[][][] output;
+    private double[][][] input, dInput;
+    private double[][][] output, dOutput;
     private int inputSize, channels, filterSize, stride, outputSize;
 
     public MaxPoolLayer(int inputSize, int channels, int filterSize, int stride) {
@@ -35,6 +35,38 @@ public class MaxPoolLayer {
         }
 
         return output;
+    }
+
+    public double[][][] backwardPass(double[][][] dOutput) {
+        this.dOutput = dOutput;
+        dInput = new double[channels][inputSize][inputSize];
+
+        for (int c = 0; c < channels; c++) {
+            for (int y = 0; (y/stride) < outputSize; y += stride) {
+                for (int x = 0; (x/stride) < outputSize; x += stride) {
+
+                    double max = output[c][y/stride][x/stride];
+
+                    int lastX = -1, lastY = -1;
+
+                    for (int fY = 0; fY < filterSize; fY++) {
+                        for (int fX = 0; fX < filterSize; fX++) {
+                            if (input[c][y +  fY][x + fX] == max) {
+                                lastX = fX;
+                                lastY = fY;
+                            }
+                        }
+                    }
+
+                    if (lastX != -1 && lastY != -1) {
+                        dInput[c][y + lastY][x + lastX] += dOutput[c][y/stride][x/stride];
+                    }
+
+                    output[c][y/stride][x/stride] = max;
+                }
+            }
+        }
+        return dInput;
     }
 
     public double[][][] getOutput() {

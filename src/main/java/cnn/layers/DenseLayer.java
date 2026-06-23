@@ -9,6 +9,7 @@ public class DenseLayer {
     private double[] dInput, dOutput;
     private double[][] weights;
     private int inputSize, outputSize;
+    private int inChannels, inHeight, inWidth;
     private double learningRate;
 
     private Random r = new Random();
@@ -53,6 +54,9 @@ public class DenseLayer {
 
     public double[] forwardPass(double[][][] input) {
         forwardPass(flatten(input));
+        inChannels = input.length;
+        inHeight = input[0].length;
+        inWidth = input[0][0].length;
         return output;
     }
 
@@ -70,7 +74,26 @@ public class DenseLayer {
         return flattened;
     }
 
-    public double[] backwardPass(double[] dOutput) {
+    private double[][][] reshape(double[] input) {
+        int count = 0;
+        double[][][] output = new double[inChannels][inHeight][inWidth];
+
+        for (int i = 0; i < inChannels; i++) {
+            for (int j = 0; j < inHeight; j++) {
+                for (int k = 0; k < inWidth; k++) {
+                    output[i][j][k] = input[count];
+                }
+            }
+        }
+
+        return output;
+    }
+
+    public double[][][] backwardPass3D(double[] dOutput) {
+        return reshape(backwardPass1D(dOutput));
+    }
+
+    public double[] backwardPass1D(double[] dOutput) {
         dInput = new double[inputSize];
 
         double clip = 1;

@@ -12,6 +12,7 @@ public class ConvolutionLayer {
 
     private double[] bias;
     private int inputSize, outputSize, filterSize, filterNum, channels, stride;
+    private double learningRate = 0.0001;
 
     private Random r = new Random();
 
