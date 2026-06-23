@@ -1,12 +1,4 @@
 package main.java.cnn;
-import main.java.cnn.layers.ConvolutionLayer;
-import main.java.cnn.layers.DenseLayer;
-import main.java.cnn.layers.MaxPoolLayer;
-import main.java.cnn.layers.activation.ReLU1D;
-import main.java.cnn.layers.activation.ReLU3D;
-import main.java.cnn.layers.activation.Sigmoid1D;
-
-import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {

@@ -3,7 +3,7 @@ package main.java.cnn.layers.activation;
 public class Sigmoid1D {
 
     private double[] input, output;
-    private double[] dInput, dOutput;
+    private double[] dInput;
     private int size;
 
     public double[] forwardPass(double[] input) {
@@ -20,12 +20,8 @@ public class Sigmoid1D {
         return output;
     }
 
-    public double[] backwardPass(double[] dOutput) {
-        this.dOutput = dOutput;
-
-        for (int i = 0; i < size; i++) {
-            dInput[i] = dOutput[i] * (output[i] * (1 - output[i]));
-        }
+    public double[] backwardPass(double[] dInput) {
+        this.dInput = dInput;
 
         return dInput;
     }
