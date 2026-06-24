@@ -1,7 +1,11 @@
 package main.java.cnn;
 
-import main.java.cnn.layers.*;
-import main.java.cnn.layers.activation.*;
+import main.java.cnn.layers.ConvolutionLayer;
+import main.java.cnn.layers.DenseLayer;
+import main.java.cnn.layers.MaxPoolLayer;
+import main.java.cnn.layers.activation.ReLU1D;
+import main.java.cnn.layers.activation.ReLU3D;
+import main.java.cnn.layers.activation.Sigmoid1D;
 
 import java.util.Arrays;
 
@@ -16,21 +20,20 @@ public class CNN {
 
     private double[][][] trainImages, testImages;
     private int[] trainLabels, testLabels;
-    private int inputDim, testSize, trainSize, outputs;
+    private int inputDim;
 
     public CNN(int inputDim) {
         this.inputDim = inputDim;
-        c1 = new ConvolutionLayer(inputDim, 1, 32, 3, 1);
+        c1 = new ConvolutionLayer(inputDim, 1, 4, 3, 1);
         r1 = new ReLU3D();
         p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 64, 3, 1);
+        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 16, 3, 1);
         r2 = new ReLU3D();
         p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
         d1 = new DenseLayer(p2.getFlattenedSize(), 128);
         r3 = new ReLU1D();
         d2 = new DenseLayer(d1.getOutputSize(), 10);
         s1 = new Sigmoid1D();
-        outputs = 10;
     }
 
     private double[] forward(double[][] input) {
@@ -85,8 +88,6 @@ public class CNN {
     public void setData(double[][][] trainImages, double[][][] testImages) {
         this.trainImages = trainImages;
         this.testImages = testImages;
-        trainSize = trainImages.length;
-        testSize = testImages.length;
     }
 
     public void setLabels(int[] trainLabels, int[] testLabels) {
