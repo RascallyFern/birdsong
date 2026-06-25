@@ -1,4 +1,7 @@
 package main.java.cnn.layers;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -17,6 +20,11 @@ public class ConvolutionLayer {
     private Random r = new Random();
 
     public ConvolutionLayer(int inputSize, int channels, int filterNum, int filterSize, int stride) {
+        initVars(inputSize, channels, filterNum, filterSize, stride);
+        initLayer(filterNum);
+    }
+
+    private void initVars(int inputSize, int channels, int filterNum, int filterSize, int stride) {
         this.inputSize = inputSize;
         this.filterSize = filterSize;
         this.filterNum = filterNum;
@@ -27,8 +35,6 @@ public class ConvolutionLayer {
 
         bias = new double[filterNum];
         Arrays.fill(bias, 0.0);
-
-        initLayer(filterNum);
     }
 
     private void initLayer(int filterNum) {
@@ -76,6 +82,53 @@ public class ConvolutionLayer {
         return output;
     }
 
+    public void exportToCSV(BufferedWriter bw) throws IOException {
+        //int inputSize, int channels, int filterNum, int filterSize, int stride
+        bw.write(String.format("conv,%d,%d,%d,%d,%d\n",inputSize,channels,filterNum,filterSize,stride));
+        for (int f = 0; f < filterNum; f++) {
+            for (int c = 0; c < channels; c++) {
+                for (int row = 0; row < filterSize; row++) {
+                    bw.write(Arrays.toString(filters[f][c][row]).replaceAll("\\[","").replaceAll("\\]", "").replace(" ", "") + "\n");
+                }
+            }
+        }
+        bw.write(Arrays.toString(bias).replaceAll("\\[","").replaceAll("\\]", "").replace(" ", "") + "\n");
+    }
+
+    public void importFromCSV(BufferedReader br) throws IOException {
+        String line = br.readLine();
+        String[] split = line.split(",");
+        String[] filterRow;
+        int[] vars = new int[split.length - 1];
+
+        if (!split[0].equals("conv")) {
+            System.out.println("Import does not match convolution layer!");
+            return;
+        }
+
+        for (int i = 0; i < split.length - 1; i++) {
+            vars[i] = Integer.parseInt(split[i+1]);
+        }
+
+        //int inputSize, int channels, int filterNum, int filterSize, int stride
+        initVars(vars[0], vars[1], vars[2], vars[3], vars[4]);
+
+        for (int f = 0; f < filterNum; f++) {
+            for (int c = 0; c < channels; c++) {
+                for (int row = 0; row < filterSize; row++) {
+                    filterRow = br.readLine().split(",");
+                    for (int w = 0; w < filterSize; w++) {
+                        filters[f][c][row][w] = Double.parseDouble(filterRow[w]);
+                    }
+                }
+            }
+        }
+
+        String[] biasImport = br.readLine().split(",");
+        for (int i = 0; i < bias.length; i++) {
+            bias[i] = Double.parseDouble(biasImport[i]);
+        }
+    }
 
     public double[][][][] getFilters() {
         return filters;

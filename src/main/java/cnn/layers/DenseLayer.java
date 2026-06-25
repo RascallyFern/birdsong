@@ -1,5 +1,8 @@
 package main.java.cnn.layers;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -15,14 +18,7 @@ public class DenseLayer {
     private Random r = new Random();
 
     public DenseLayer(int inputSize, int outputSize) {
-        input = new double[inputSize];
-        output = new double[outputSize];
-        weights = new double[outputSize][inputSize];
-        bias = new double[outputSize];
-
-        this.inputSize = inputSize;
-        this.outputSize = outputSize;
-        learningRate = 0.001;
+        initVars(inputSize, outputSize);
 
         Arrays.fill(bias, 0.0);
 
@@ -34,6 +30,17 @@ public class DenseLayer {
                 weights[i][j] = (r.nextDouble() * 2 * limit) - limit;
             }
         }
+    }
+
+    private void initVars(int inputSize, int outputSize) {
+        input = new double[inputSize];
+        output = new double[outputSize];
+        weights = new double[outputSize][inputSize];
+        bias = new double[outputSize];
+
+        this.inputSize = inputSize;
+        this.outputSize = outputSize;
+        learningRate = 0.001;
     }
 
     public double[] forwardPass(double[] input) {
@@ -133,4 +140,42 @@ public class DenseLayer {
         return outputSize;
     }
 
+    public void exportToCSV(BufferedWriter bw) throws IOException {
+        //int inputSize, int outputSize
+        bw.write(String.format("dense,%d,%d\n",inputSize,outputSize));
+        for (int out = 0; out < outputSize; out++) {
+            bw.write(Arrays.toString(weights[out]).replaceAll("\\[","").replaceAll("\\]", "").replace(" ", "") + "\n");
+        }
+        bw.write(Arrays.toString(bias).replaceAll("\\[","").replaceAll("\\]", "").replace(" ", "") + "\n");
+    }
+
+    public void importFromCSV(BufferedReader br) throws IOException {
+        String line = br.readLine();
+        String[] split = line.split(",");
+        String[] filterRow;
+        int[] vars = new int[split.length - 1];
+
+        if (!split[0].equals("dense")) {
+            System.out.println("Import does not match dense layer!");
+            return;
+        }
+
+        for (int i = 0; i < split.length - 1; i++) {
+            vars[i] = Integer.parseInt(split[i+1]);
+        }
+
+        initVars(vars[0], vars[1]);
+
+        for (int out = 0; out < outputSize; out++) {
+            filterRow = br.readLine().split(",");
+            for (int w = 0; w < filterRow.length; w++) {
+                weights[out][w] = Double.parseDouble(filterRow[w]);
+            }
+        }
+
+        String[] biasImport = br.readLine().split(",");
+        for (int i = 0; i < bias.length; i++) {
+            bias[i] = Double.parseDouble(biasImport[i]);
+        }
+    }
 }

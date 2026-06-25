@@ -1,11 +1,20 @@
 package main.java.cnn.layers;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.Arrays;
+
 public class MaxPoolLayer {
     private double[][][] input, dInput;
     private double[][][] output, dOutput;
     private int inputSize, channels, filterSize, stride, outputSize;
 
     public MaxPoolLayer(int inputSize, int channels, int filterSize, int stride) {
+        initVars(inputSize, channels, filterSize, stride);
+    }
+
+    private void initVars(int inputSize, int channels, int filterSize, int stride) {
         this.inputSize = inputSize;
         this.channels = channels;
         this.filterSize = filterSize;
@@ -82,4 +91,26 @@ public class MaxPoolLayer {
     }
 
     public int getFilterCount() { return channels; }
+
+    public void exportToCSV(BufferedWriter bw) throws IOException {
+        //int inputSize, int channels, int filterSize, int stride
+        bw.write(String.format("pool,%d,%d,%d,%d\n",inputSize,channels,filterSize,stride));
+    }
+
+    public void importFromCSV(BufferedReader br) throws IOException {
+        String line = br.readLine();
+        String[] split = line.split(",");
+        int[] vars = new int[split.length - 1];
+
+        if (!split[0].equals("pool")) {
+            System.out.println("Import does not match pooling layer!");
+            return;
+        }
+
+        for (int i = 0; i < split.length - 1; i++) {
+            vars[i] = Integer.parseInt(split[i+1]);
+        }
+
+        initVars(vars[0], vars[1], vars[2], vars[3]);
+    }
 }

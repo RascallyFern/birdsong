@@ -7,6 +7,7 @@ import main.java.cnn.layers.activation.ReLU1D;
 import main.java.cnn.layers.activation.ReLU3D;
 import main.java.cnn.layers.activation.Sigmoid1D;
 
+import java.io.*;
 import java.util.Arrays;
 
 public class CNN {
@@ -21,13 +22,21 @@ public class CNN {
     private double[][][] trainImages, testImages;
     private int[] trainLabels, testLabels;
     private int inputDim;
+    private String exportName;
+    private File importFile, exportFile;
+
+    public CNN(String importCsvName) throws FileNotFoundException {
+        BufferedReader br = new BufferedReader(new FileReader(importCsvName + ".csv"));
+
+    }
 
     public CNN(int inputDim) {
         this.inputDim = inputDim;
-        c1 = new ConvolutionLayer(inputDim, 1, 4, 3, 1);
+        exportName = "export";
+        c1 = new ConvolutionLayer(inputDim, 1, 20, 3, 1);
         r1 = new ReLU3D();
         p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 16, 3, 1);
+        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 40, 3, 1);
         r2 = new ReLU3D();
         p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
         d1 = new DenseLayer(p2.getFlattenedSize(), 128);
@@ -65,17 +74,27 @@ public class CNN {
         y = p2.backwardPass(y);
     }
 
+    public void test() {
+        int correct = 0;
+        double[] predictions;
+
+        for (int i = 0; i < testImages.length; i++) {
+            predictions = forward(testImages[i]);
+            if (mostConfidence(predictions) == testLabels[i]) {
+                correct++;
+            }
+        }
+
+        double acc = (double) correct / testImages.length;
+
+        System.out.println("Accuracy: " + acc);
+    }
+
     public void train(int epochs) {
         double[] predictions = null;
         for (int e = 0; e < epochs; e++) {
-            double avgAcc = 0;
 
-            for (int i = 0; i < testImages.length; i++) {
-                predictions = forward(testImages[i]);
-                avgAcc += predictions[testLabels[i]];
-            }
-
-            System.out.println("Accuracy: " + (avgAcc / testLabels.length));
+            test();
 
             for (int i = 0; i < trainImages.length; i++) {
                 predictions = forward(trainImages[i]);
@@ -83,6 +102,20 @@ public class CNN {
             }
             System.out.println("Label " + trainLabels[trainImages.length - 1] + ": " + Arrays.toString(predictions));
         }
+    }
+
+    public int mostConfidence(double[] predictions) {
+        double max = Double.NEGATIVE_INFINITY;
+        int index = 0;
+
+        for (int i = 0; i < predictions.length; i++) {
+            if (predictions[i] > max) {
+                max = predictions[i];
+                index = i;
+            }
+        }
+
+        return index;
     }
 
     public void setData(double[][][] trainImages, double[][][] testImages) {
@@ -93,5 +126,35 @@ public class CNN {
     public void setLabels(int[] trainLabels, int[] testLabels) {
         this.trainLabels = trainLabels;
         this.testLabels = testLabels;
+    }
+
+    public void exportToCSV() throws IOException {
+        exportFile = new File(exportName + ".csv");
+
+        if (!exportFile.createNewFile()) {
+            System.out.println("File with this name already exists!");
+            return;
+        }
+
+        BufferedWriter bw = new BufferedWriter(new FileWriter(exportFile));
+        c1.exportToCSV(bw);
+        p1.exportToCSV(bw);
+        c2.exportToCSV(bw);
+        p2.exportToCSV(bw);
+        d1.exportToCSV(bw);
+        d2.exportToCSV(bw);
+        bw.close();
+    }
+
+    public void importFromCSV(String importDir) throws IOException {
+        importFile = new File(importDir);
+
+        BufferedReader br = new BufferedReader(new FileReader(importFile));
+        c1.importFromCSV(br);
+        p1.importFromCSV(br);
+        c2.importFromCSV(br);
+        p2.importFromCSV(br);
+        d1.importFromCSV(br);
+        d2.importFromCSV(br);
     }
 }
