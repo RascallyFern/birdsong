@@ -33,10 +33,10 @@ public class CNN {
     public CNN(int inputDim) {
         this.inputDim = inputDim;
         exportName = "export";
-        c1 = new ConvolutionLayer(inputDim, 1, 20, 3, 1);
+        c1 = new ConvolutionLayer(inputDim, 1, 1, 3, 1);
         r1 = new ReLU3D();
         p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 40, 3, 1);
+        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 1, 3, 1);
         r2 = new ReLU3D();
         p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
         d1 = new DenseLayer(p2.getFlattenedSize(), 128);

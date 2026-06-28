@@ -10,8 +10,10 @@ public class Dataset {
     private double[][][] data;
     private int[] label;
     private int imageCount, width, height;
+    private String dir;
 
     public Dataset(String dir) {
+        this.dir = dir;
         try {
             s = new Scanner(new File(dir));
             counter = new Scanner(new File(dir));
@@ -24,12 +26,15 @@ public class Dataset {
     private void readFile() {
         String[] split;
         int line = 0;
-        String[] start = s.nextLine().split(",");
 
-        width = Integer.parseInt(start[start.length - 1].split("x")[0]);
-        height = Integer.parseInt(start[start.length - 1].split("x")[0]);
+        if (dir.contains("/mnistcsv/")) {
+            s.nextLine();
+        }
 
-        imageCount = -1;
+        width = 28;
+        height = 28;
+
+        imageCount = 0;
         while (counter.hasNext()) {
             counter.nextLine();
             imageCount++;
@@ -46,6 +51,8 @@ public class Dataset {
             }
             line++;
         }
+
+        System.out.println("Data read successfully!");
     }
 
     public int[] getLabel() {
