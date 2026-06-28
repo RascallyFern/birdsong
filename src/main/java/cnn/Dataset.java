@@ -45,7 +45,7 @@ public class Dataset {
 
         while (s.hasNext()) {
             split = s.nextLine().split(",");
-            label[line] = Integer.parseInt(split[0]);
+            label[line] = Integer.parseInt(split[0]) + (dir.contains("emnist") ? -1 : 0);
             for (int i = 0; i < split.length - 1; i++) {
                 data[line][(int) Math.floor((i) / height)][(i % width)] = (double) Integer.parseInt(split[i + 1]) / 255;
             }

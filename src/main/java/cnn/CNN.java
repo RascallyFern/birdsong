@@ -33,16 +33,21 @@ public class CNN {
     public CNN(int inputDim) {
         this.inputDim = inputDim;
         exportName = "export";
-        c1 = new ConvolutionLayer(inputDim, 1, 1, 3, 1);
-        r1 = new ReLU3D();
-        p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-        c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 1, 3, 1);
-        r2 = new ReLU3D();
-        p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
-        d1 = new DenseLayer(p2.getFlattenedSize(), 128);
-        r3 = new ReLU1D();
-        d2 = new DenseLayer(d1.getOutputSize(), 10);
-        s1 = new Sigmoid1D();
+
+        try {
+            c1 = new ConvolutionLayer(inputDim, 1, 48, 3, 1);
+            r1 = new ReLU3D();
+            p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
+            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 96, 3, 1);
+            r2 = new ReLU3D();
+            p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
+            d1 = new DenseLayer(p2.getFlattenedSize(), 256);
+            r3 = new ReLU1D();
+            d2 = new DenseLayer(d1.getOutputSize(), 26);
+            s1 = new Sigmoid1D();
+        } catch (Exception e) {
+            throw new Error("Layers initialised unsuccessfully!");
+        }
     }
 
     private double[] forward(double[][] input) {
@@ -87,21 +92,44 @@ public class CNN {
 
         double acc = (double) correct / testImages.length;
 
-        System.out.println("Accuracy: " + acc);
+        System.out.println("Current Accuracy: " + acc);
     }
 
     public void train(int epochs) {
-        double[] predictions = null;
+        double[] predictions;
+        //how much progress bar increments
+        int percent = 4;
+        int percentMag = trainImages.length / (100 / percent);
+        int count;
+
+        StringBuilder bar;
+
         for (int e = 0; e < epochs; e++) {
+            System.out.println("\nEpoch " + (e+1) + ": ");
 
             test();
 
+            count = 0;
             for (int i = 0; i < trainImages.length; i++) {
+                if (i % percentMag == 0) {
+                    count++;
+                    bar = new StringBuilder("[");
+                    for (int j = 0; j < (100 / percent); j++) {
+                        if (j < count) {
+                            bar.append("=");
+                        } else {
+                            bar.append("-");
+                        }
+                    }
+                    bar.append("]");
+                    System.out.print("\rTraining Progress: " + bar + "\n");
+                }
                 predictions = forward(trainImages[i]);
                 backward(Functions.bceGradients(predictions, trainLabels[i]));
             }
-            System.out.println("Label " + trainLabels[trainImages.length - 1] + ": " + Arrays.toString(predictions));
         }
+
+        test();
     }
 
     public int mostConfidence(double[] predictions) {
