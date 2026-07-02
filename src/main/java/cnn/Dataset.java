@@ -42,7 +42,7 @@ public class Dataset {
 
         label = new int[imageCount];
         data = new double[imageCount][height][width];
-
+        s.nextLine();
         while (s.hasNext()) {
             split = s.nextLine().split(",");
             label[line] = Integer.parseInt(split[0]) + (dir.contains("emnist") ? -1 : 0);
@@ -52,7 +52,7 @@ public class Dataset {
             line++;
         }
 
-        System.out.println("Data read successfully!");
+        System.out.println("File [" + dir + "] read successfully!");
     }
 
     public int[] getLabel() {

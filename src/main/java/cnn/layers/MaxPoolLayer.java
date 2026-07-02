@@ -66,12 +66,7 @@ public class MaxPoolLayer {
                             }
                         }
                     }
-
-                    if (lastX != -1 && lastY != -1) {
-                        dInput[c][y + lastY][x + lastX] += dOutput[c][y/stride][x/stride];
-                    }
-
-                    output[c][y/stride][x/stride] = max;
+                    dInput[c][y + lastY][x + lastX] = dOutput[c][y/stride][x/stride];
                 }
             }
         }

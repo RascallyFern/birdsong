@@ -35,15 +35,15 @@ public class CNN {
         exportName = "export";
 
         try {
-            c1 = new ConvolutionLayer(inputDim, 1, 48, 3, 1);
+            c1 = new ConvolutionLayer(inputDim, 1, 16, 3, 1);
             r1 = new ReLU3D();
             p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 96, 3, 1);
+            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 32, 3, 1);
             r2 = new ReLU3D();
             p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
-            d1 = new DenseLayer(p2.getFlattenedSize(), 256);
+            d1 = new DenseLayer(p2.getFlattenedSize(), 128);
             r3 = new ReLU1D();
-            d2 = new DenseLayer(d1.getOutputSize(), 26);
+            d2 = new DenseLayer(d1.getOutputSize(), 10);
             s1 = new Sigmoid1D();
         } catch (Exception e) {
             throw new Error("Layers initialised unsuccessfully!");
@@ -77,6 +77,11 @@ public class CNN {
 
         double[][][] y = d1.backwardPass3D(x);
         y = p2.backwardPass(y);
+        y = r2.backwardPass(y);
+        y = c2.backwardPass(y);
+        y = p1.backwardPass(y);
+        y = r1.backwardPass(y);
+        y = c1.backwardPass(y);
     }
 
     public void test() {
@@ -122,11 +127,12 @@ public class CNN {
                         }
                     }
                     bar.append("]");
-                    System.out.print("\rTraining Progress: " + bar + "\n");
+                    System.out.print("\rTraining Progress: " + bar);
                 }
                 predictions = forward(trainImages[i]);
                 backward(Functions.bceGradients(predictions, trainLabels[i]));
             }
+            System.out.println();
         }
 
         test();

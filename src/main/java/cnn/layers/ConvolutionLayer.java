@@ -10,8 +10,8 @@ public class ConvolutionLayer {
     //e.g. input[0] for 1st fm, input[2][1][1] for (1,1) in fm 2.
 
     private double[][][][] filters;
-    private double[][][] input;
-    private double[][][] output;
+    private double[][][] input, dInput;
+    private double[][][] output, dOutput;
 
     private double[] bias;
     private int inputSize, outputSize, filterSize, filterNum, channels, stride;
@@ -30,6 +30,7 @@ public class ConvolutionLayer {
         this.filterNum = filterNum;
         this.channels = channels;
         this.stride = stride;
+        this.dInput = new double[channels][inputSize][inputSize];
         this.outputSize = ((inputSize - filterSize) / stride) + 1;
         output = new double[filterNum][outputSize][outputSize];
 
@@ -72,14 +73,79 @@ public class ConvolutionLayer {
                             }
                         }
                     }
-
                     output[f][outY][outX] = sum + bias[f];
-
                 }
             }
         }
 
         return output;
+    }
+
+    public double[][][] backwardPass(double[][][] dOutput) {
+        this.dOutput = dOutput;
+        dInput = new double[channels][inputSize][inputSize];
+        double sum;
+        double[][][] dOutPadded = new double[dOutput.length][dOutput[0].length + 2 * (filterSize - 1)][dOutput[0][0].length + 2 * (filterSize - 1)];
+
+        for (int c = 0; c < dOutput.length; c++) {
+            for (int y = 0; y < dOutPadded[0].length; y++) {
+                for (int x = 0; x < dOutPadded[0][0].length; x++) {
+                    if (x < (filterSize - 1) || y < (filterSize - 1) || x >= (dOutPadded[0][0].length - (filterSize - 1)) || y >= (dOutPadded[0].length - (filterSize - 1))) {
+                        dOutPadded[c][y][x] = 0;
+                    } else {
+                        dOutPadded[c][y][x] = dOutput[c][y-(filterSize - 1)][x-(filterSize - 1)];
+                    }
+                }
+            }
+        }
+
+        //loss wrt input
+        for (int out = 0; out < channels; out++) {
+            for (int f = 0; f < filterNum; f++) {
+                for (int y = 0; y < dInput[0].length; y++) {
+                    for (int x = 0; x < dInput[0][0].length; x++) {
+                        sum = 0;
+                        for (int wY = 0; wY < filterSize; wY++) {
+                            for (int wX = 0; wX < filterSize; wX++) {
+                                //flip filters for backprop
+                                sum += dOutPadded[f][y + wY][x + wX] * filters[f][out][filterSize - 1 - wY][filterSize - 1 - wX];
+                            }
+                        }
+                        dInput[out][y][x] += sum;
+                    }
+                }
+            }
+        }
+
+        //loss wrt weights
+        for (int f = 0; f < dOutput.length; f++) {
+            for (int y = 0; y < filterSize; y++) {
+                for (int x = 0; x < filterSize; x++) {
+                    for (int c = 0; c < channels; c++) {
+                        sum = 0;
+                        for (int doutY = 0; doutY < dOutput[0].length; doutY++) {
+                            for (int doutX = 0; doutX < dOutput[0][0].length; doutX++) {
+                                sum += input[c][y + doutY][x + doutX] * dOutput[f][doutY][doutX];
+                            }
+                        }
+                        filters[f][c][y][x] -= sum * learningRate;
+                    }
+                }
+            }
+        }
+
+        //lost wrt bias
+        for (int b = 0; b < dOutput.length; b++) {
+            sum = 0;
+            for (int y = 0; y < dOutput[0].length; y++) {
+                for (int x = 0; x < dOutput[0][0].length; x++) {
+                    sum += dOutput[b][y][x];
+                }
+            }
+            bias[b] -= learningRate * sum;
+        }
+
+        return dInput;
     }
 
     public void exportToCSV(BufferedWriter bw) throws IOException {
@@ -112,6 +178,8 @@ public class ConvolutionLayer {
 
         //int inputSize, int channels, int filterNum, int filterSize, int stride
         initVars(vars[0], vars[1], vars[2], vars[3], vars[4]);
+
+        filters = new double[filterNum][channels][filterSize][filterSize];
 
         for (int f = 0; f < filterNum; f++) {
             for (int c = 0; c < channels; c++) {
