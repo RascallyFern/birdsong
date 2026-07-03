@@ -4,12 +4,12 @@ import java.util.Arrays;
 
 public class ReLU1D {
 
-    private double[] input, dInput;
-    private double[] output, dOutput;
+    private double[] dInput;
+    private double[] output;
+
     private int size;
 
     public double[] forwardPass(double[] input) {
-        this.input = input;
         size = input.length;
 
         output = new double[size];
@@ -29,7 +29,6 @@ public class ReLU1D {
             dOutput[i] = (dOutput[i] > clip ? clip : dOutput[i]);
             dOutput[i] = (dOutput[i] < -clip ? -clip : dOutput[i]);
         }
-        this.dOutput = dOutput;
 
         for (int i = 0; i < size; i++) {
             dInput[i] = (output[i] > 0 ? dOutput[i] : 0);

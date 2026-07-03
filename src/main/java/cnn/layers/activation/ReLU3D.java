@@ -2,7 +2,7 @@ package main.java.cnn.layers.activation;
 
 public class ReLU3D {
     private double[][][] input, dInput;
-    private double[][][] output, dOutput;
+    private double[][][] output;
 
     public double[][][] forwardPass(double[][][] input) {
         this.input = input;
@@ -25,7 +25,6 @@ public class ReLU3D {
     }
 
     public double[][][] backwardPass(double[][][] dOutput) {
-        this.dOutput = dOutput;
         dInput = new double[input.length][input[0].length][input[0][0].length];
 
         for (int i = 0; i < dInput.length; i++) {

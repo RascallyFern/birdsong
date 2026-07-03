@@ -30,17 +30,15 @@ public class ConvolutionLayer {
         this.filterNum = filterNum;
         this.channels = channels;
         this.stride = stride;
-        this.dInput = new double[channels][inputSize][inputSize];
         this.outputSize = ((inputSize - filterSize) / stride) + 1;
         output = new double[filterNum][outputSize][outputSize];
+        filters = new double[filterNum][channels][filterSize][filterSize];
 
         bias = new double[filterNum];
         Arrays.fill(bias, 0.0);
     }
 
     private void initLayer(int filterNum) {
-        filters = new double[filterNum][channels][filterSize][filterSize];
-
         // He init for weights
         double fanIn = channels * filterSize * filterSize;
         double stdv = Math.sqrt(2.0 / fanIn);
@@ -73,7 +71,9 @@ public class ConvolutionLayer {
                             }
                         }
                     }
+
                     output[f][outY][outX] = sum + bias[f];
+
                 }
             }
         }
@@ -85,22 +85,21 @@ public class ConvolutionLayer {
         this.dOutput = dOutput;
         dInput = new double[channels][inputSize][inputSize];
         double sum;
-        double[][][] dOutPadded = new double[dOutput.length][dOutput[0].length + 2 * (filterSize - 1)][dOutput[0][0].length + 2 * (filterSize - 1)];
+        int pad = (filterSize - 1);
+        double[][][] dOutPadded = new double[dOutput.length][dOutput[0].length + 2 * pad][dOutput[0][0].length + 2 * pad];
 
         for (int c = 0; c < dOutput.length; c++) {
             for (int y = 0; y < dOutPadded[0].length; y++) {
                 for (int x = 0; x < dOutPadded[0][0].length; x++) {
-                    if (x < (filterSize - 1) || y < (filterSize - 1) || x >= (dOutPadded[0][0].length - (filterSize - 1)) || y >= (dOutPadded[0].length - (filterSize - 1))) {
-                        dOutPadded[c][y][x] = 0;
-                    } else {
-                        dOutPadded[c][y][x] = dOutput[c][y-(filterSize - 1)][x-(filterSize - 1)];
+                    if (!(x < pad || y < pad || x >= (dOutPadded[0][0].length - pad) || y >= (dOutPadded[0].length - pad))) {
+                        dOutPadded[c][y][x] = dOutput[c][y - pad][x - pad];
                     }
                 }
             }
         }
 
         //loss wrt input
-        for (int out = 0; out < channels; out++) {
+        for (int c = 0; c < channels; c++) {
             for (int f = 0; f < filterNum; f++) {
                 for (int y = 0; y < dInput[0].length; y++) {
                     for (int x = 0; x < dInput[0][0].length; x++) {
@@ -108,10 +107,10 @@ public class ConvolutionLayer {
                         for (int wY = 0; wY < filterSize; wY++) {
                             for (int wX = 0; wX < filterSize; wX++) {
                                 //flip filters for backprop
-                                sum += dOutPadded[f][y + wY][x + wX] * filters[f][out][filterSize - 1 - wY][filterSize - 1 - wX];
+                                sum += dOutPadded[f][y + wY][x + wX] * filters[f][c][filterSize - 1 - wY][filterSize - 1 - wX];
                             }
                         }
-                        dInput[out][y][x] += sum;
+                        dInput[c][y][x] += sum;
                     }
                 }
             }
@@ -178,8 +177,6 @@ public class ConvolutionLayer {
 
         //int inputSize, int channels, int filterNum, int filterSize, int stride
         initVars(vars[0], vars[1], vars[2], vars[3], vars[4]);
-
-        filters = new double[filterNum][channels][filterSize][filterSize];
 
         for (int f = 0; f < filterNum; f++) {
             for (int c = 0; c < channels; c++) {

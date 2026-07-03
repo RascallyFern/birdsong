@@ -1,17 +1,10 @@
 package main.java.cnn;
-
-import main.java.cnn.layers.ConvolutionLayer;
-import main.java.cnn.layers.DenseLayer;
-import main.java.cnn.layers.MaxPoolLayer;
-import main.java.cnn.layers.activation.ReLU1D;
-import main.java.cnn.layers.activation.ReLU3D;
-import main.java.cnn.layers.activation.Sigmoid1D;
+import main.java.cnn.layers.*;
+import main.java.cnn.layers.activation.*;
 
 import java.io.*;
-import java.util.Arrays;
 
 public class CNN {
-
     private ConvolutionLayer c1, c2;
     private MaxPoolLayer p1, p2;
     private DenseLayer d1, d2;
@@ -25,25 +18,24 @@ public class CNN {
     private String exportName;
     private File importFile, exportFile;
 
-    public CNN(String importCsvName) throws FileNotFoundException {
-        BufferedReader br = new BufferedReader(new FileReader(importCsvName + ".csv"));
-
-    }
+//    public CNN(String importCsvName) throws FileNotFoundException {
+//        BufferedReader br = new BufferedReader(new FileReader(importCsvName + ".csv"));
+//    }
 
     public CNN(int inputDim) {
         this.inputDim = inputDim;
         exportName = "export";
 
         try {
-            c1 = new ConvolutionLayer(inputDim, 1, 16, 3, 1);
+            c1 = new ConvolutionLayer(inputDim, 1, 10, 3, 1);
             r1 = new ReLU3D();
             p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 32, 3, 1);
+            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 20, 3, 1);
             r2 = new ReLU3D();
             p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
-            d1 = new DenseLayer(p2.getFlattenedSize(), 128);
+            d1 = new DenseLayer(p2.getFlattenedSize(), 256);
             r3 = new ReLU1D();
-            d2 = new DenseLayer(d1.getOutputSize(), 10);
+            d2 = new DenseLayer(d1.getOutputSize(), 26);
             s1 = new Sigmoid1D();
         } catch (Exception e) {
             throw new Error("Layers initialised unsuccessfully!");
@@ -71,8 +63,7 @@ public class CNN {
     }
 
     private void backward(double[] loss) {
-        double[] x = s1.backwardPass(loss);
-        x = d2.backwardPass1D(x);
+        double[] x = d2.backwardPass1D(loss);
         x = r3.backwardPass(x);
 
         double[][][] y = d1.backwardPass3D(x);
@@ -82,6 +73,7 @@ public class CNN {
         y = p1.backwardPass(y);
         y = r1.backwardPass(y);
         y = c1.backwardPass(y);
+
     }
 
     public void test() {
