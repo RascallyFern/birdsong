@@ -96,11 +96,11 @@ public class DenseLayer {
         return output;
     }
 
-    public double[][][] backwardPass3D(double[] dOutput) {
-        return reshape(backwardPass1D(dOutput));
+    public double[][][] backwardPass3D(double[] dOutput, double learningRate) {
+        return reshape(backwardPass1D(dOutput, learningRate));
     }
 
-    public double[] backwardPass1D(double[] dOutput) {
+    public double[] backwardPass1D(double[] dOutput, double learningRate) {
         dInput = new double[inputSize];
 
         double clip = 1;

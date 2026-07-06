@@ -15,6 +15,7 @@ public class CNN {
     private double[][][] trainImages, testImages;
     private int[] trainLabels, testLabels;
     private int inputDim;
+    private double learningRate;
     private String exportName;
     private File importFile, exportFile;
 
@@ -27,15 +28,15 @@ public class CNN {
         exportName = "export";
 
         try {
-            c1 = new ConvolutionLayer(inputDim, 1, 10, 3, 1);
+            c1 = new ConvolutionLayer(inputDim, 1, 8, 3, 1);
             r1 = new ReLU3D();
             p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 20, 3, 1);
+            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 16, 3, 1);
             r2 = new ReLU3D();
             p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
             d1 = new DenseLayer(p2.getFlattenedSize(), 256);
             r3 = new ReLU1D();
-            d2 = new DenseLayer(d1.getOutputSize(), 26);
+            d2 = new DenseLayer(d1.getOutputSize(), 10);
             s1 = new Sigmoid1D();
         } catch (Exception e) {
             throw new Error("Layers initialised unsuccessfully!");
@@ -63,16 +64,16 @@ public class CNN {
     }
 
     private void backward(double[] loss) {
-        double[] x = d2.backwardPass1D(loss);
+        double[] x = d2.backwardPass1D(loss, learningRate);
         x = r3.backwardPass(x);
 
-        double[][][] y = d1.backwardPass3D(x);
+        double[][][] y = d1.backwardPass3D(x, learningRate);
         y = p2.backwardPass(y);
         y = r2.backwardPass(y);
-        y = c2.backwardPass(y);
+        y = c2.backwardPass(y, learningRate);
         y = p1.backwardPass(y);
         y = r1.backwardPass(y);
-        y = c1.backwardPass(y);
+        y = c1.backwardPass(y, learningRate);
 
     }
 
@@ -103,6 +104,7 @@ public class CNN {
 
         for (int e = 0; e < epochs; e++) {
             System.out.println("\nEpoch " + (e+1) + ": ");
+            learningRate = 0.01 * (1 - ((double) e / epochs));
 
             test();
 

@@ -2,11 +2,10 @@ package main.java.cnn.layers.activation;
 
 public class Sigmoid1D {
 
-    private double[] input, output;
+    private double[] output;
     private int size;
 
     public double[] forwardPass(double[] input) {
-        this.input = input;
         size = input.length;
 
         output = new double[size];

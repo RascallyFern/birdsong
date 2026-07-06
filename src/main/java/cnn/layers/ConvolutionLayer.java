@@ -15,7 +15,6 @@ public class ConvolutionLayer {
 
     private double[] bias;
     private int inputSize, outputSize, filterSize, filterNum, channels, stride;
-    private double learningRate = 0.0001;
 
     private Random r = new Random();
 
@@ -81,7 +80,7 @@ public class ConvolutionLayer {
         return output;
     }
 
-    public double[][][] backwardPass(double[][][] dOutput) {
+    public double[][][] backwardPass(double[][][] dOutput, double learningRate) {
         this.dOutput = dOutput;
         dInput = new double[channels][inputSize][inputSize];
         double sum;
@@ -127,7 +126,7 @@ public class ConvolutionLayer {
                                 sum += input[c][y + doutY][x + doutX] * dOutput[f][doutY][doutX];
                             }
                         }
-                        filters[f][c][y][x] -= sum * learningRate;
+                        filters[f][c][y][x] -= learningRate * sum;
                     }
                 }
             }
