@@ -5,8 +5,8 @@ import java.net.URL;
 
 public class Scraper {
 
-    private String key, endpoint, outputName;
-    private String[] data, downloadUrls, extensions;
+    private String key, endpoint, outputName, data;
+    private String[] downloadUrls, extensions;
     private int files, limit;
 
     public Scraper() {
@@ -21,6 +21,11 @@ public class Scraper {
         String url = endpoint;
         String fileUrl;
 
+        File dir = new File("./audio");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
         for (String q : queries) {
             url += (q + "+");
         }
@@ -28,13 +33,12 @@ public class Scraper {
         url = url.substring(0, url.length() - 1) + "&per_page=1000&key=" + key;
 
         InputStream is = new URL(url).openStream();
-        Reader r = new InputStreamReader(is, "UTF-8");
-
-        data = r.readAllAsString().replaceAll(" ", "").split("\n");
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        data = readAll(br);
 
         int count = 0;
 
-        for (String line : data) {
+        for (String line : data.replaceAll(" ", "").split("\n")) {
             if (line.contains("\"numRecordings\"")) {
                 files = Integer.parseInt(line.split(":", 2)[1].replace("\"", "").replace(",", ""));
                 downloadUrls = new String[files];
@@ -55,6 +59,15 @@ public class Scraper {
         for (int i = 0; i < count - 1; i++) {
             download(downloadUrls[i], extensions[i], String.valueOf(i + 1));
         }
+    }
+
+    private String readAll(BufferedReader br) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int c;
+        while ((c = br.read()) != -1) {
+            sb.append((char) c);
+        }
+        return sb.toString();
     }
 
     private void download(String url, String extension, String label) {

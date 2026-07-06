@@ -3,7 +3,7 @@ package main.java.scraper;
 import java.io.IOException;
 
 public class Main {
-    static void main() {
+    public static void main(String[] args) {
         Scraper s = new Scraper();
 
         try {
@@ -21,7 +21,7 @@ public class Main {
             s.scrape(new String[]{"gen:poecile", "ssp:kleinschmidti", "smp:44100"});
 
         } catch (IOException e) {
-
+            System.out.println(e);
         }
     }
 }
