@@ -1,7 +1,7 @@
 package main.java.audio;
+import main.java.fft.*;
 
-import main.java.fft.Complex;
-import main.java.fft.FFT;
+import java.util.Arrays;
 
 public class SpectrogramGenerator {
 
@@ -18,7 +18,7 @@ public class SpectrogramGenerator {
     public double[][] generateSpectrogram(WavReader wav) {
         samples = wav.getSamples();
         sampleRate = (int) wav.getFormat().getSampleRate();
-        bandMin = 0;
+        bandMin = minFreq * windowSize / sampleRate;
         bandMax = Math.min(windowSize / 2, (maxFreq * windowSize) / sampleRate);
 
         double maxMag = 0f;
@@ -41,7 +41,8 @@ public class SpectrogramGenerator {
 
         for (int i = 0; i < image.length; i++) {
             for (int j = 0; j < image[0].length; j++) {
-                image[i][j] /= maxMag;
+                image[i][j] = Math.pow(image[i][j], 2.5);
+                image[i][j] /= maxMag * maxMag;
             }
         }
 
@@ -67,5 +68,35 @@ public class SpectrogramGenerator {
         }
 
         return spectrum;
+    }
+
+    public double[][][] splitIntoSongs(double[][] spectrogram) {
+        int windowLength = 128;
+        int windowStep = windowLength / 2;
+        int frames = (spectrogram[0].length - windowLength) / windowStep + 1;
+        double rsm;
+        double[][][] songs = new double[frames][spectrogram.length][windowLength];
+
+        for (int f = 0; f < frames; f++) {
+            double[][] window = new double[spectrogram.length][windowLength];
+            rsm = 0;
+            for (int y = 0; y < spectrogram.length; y++) {
+                System.arraycopy(spectrogram[y], f * windowStep, window[y], 0, windowLength);
+            }
+
+            for (int y = 0; y < spectrogram.length; y++) {
+                for (int x = 0; x < windowLength; x++) {
+                    rsm += window[y][x] * window[y][x];
+                }
+            }
+            rsm = Math.sqrt(rsm / (spectrogram.length * windowLength));
+
+            if (rsm >= 0.03) {
+                songs[f] = window.clone();
+            } else {
+                songs[f][0][0] = -1;
+            }
+        }
+        return songs;
     }
 }

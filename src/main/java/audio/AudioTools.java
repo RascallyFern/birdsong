@@ -49,7 +49,6 @@ public class AudioTools {
     }
 
     public void getAllPaths(String dir, ArrayList<String> pathList) {
-
         if (dir.contains(".wav") | dir.contains(".mp3")) {
             pathList.add(dir);
             return;
@@ -63,6 +62,10 @@ public class AudioTools {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public double[][][] separateCalls(double[][] spectrogram) {
+        return null;
     }
 
 }

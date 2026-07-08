@@ -29,7 +29,6 @@ public class FFT {
             double angle = -2 * Math.PI * ((double) i / N);
             Complex W = new Complex(Math.cos(angle), Math.sin(angle));
             Complex t = W.mult(O[i]);
-
             X[i] = E[i].add(t);
             X[i + N/2] = E[i].sub(t);
         }

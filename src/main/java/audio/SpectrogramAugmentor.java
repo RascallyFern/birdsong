@@ -4,6 +4,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
 
 public class SpectrogramAugmentor {
@@ -16,6 +17,12 @@ public class SpectrogramAugmentor {
 
     public void createPNG(double[][] spectrogram, String outputDir) {
         File png = new File(outputDir);
+
+
+        if (spectrogram[0][0] == -1) {
+            return;
+        }
+
         BufferedImage image = new BufferedImage(spectrogram[0].length, spectrogram.length, BufferedImage.TYPE_INT_RGB);
 
         for (int y = 0; y < spectrogram.length; y++) {
@@ -40,7 +47,7 @@ public class SpectrogramAugmentor {
         double[][] copy = spectrogram.clone();
         for (int i = 0; i < copy.length; i++) {
             for (int j = 0; j < copy[0].length; j++) {
-                copy[i][j] = Math.min(r.nextGaussian() * 0.0005 + spectrogram[i][j], 0.01);
+                copy[i][j] = Math.max(0.0, Math.min(1.0, spectrogram[i][j] + r.nextGaussian() * (0.01 + r.nextDouble() * 0.05)));
             }
         }
         return copy;
