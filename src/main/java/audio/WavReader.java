@@ -12,7 +12,6 @@ public class WavReader {
     private AudioInputStream ais;
     private AudioFormat format;
     private SourceDataLine line;
-
     private double[] samples;
 
     public WavReader(String wavDir) {

@@ -4,8 +4,15 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 public class SpectrogramAugmentor {
+
+    private Random r;
+
+    public SpectrogramAugmentor() {
+        r = new Random();
+    }
 
     public void createPNG(double[][] spectrogram, String outputDir) {
         File png = new File(outputDir);
@@ -27,6 +34,16 @@ public class SpectrogramAugmentor {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public double[][] addGaussianNoise(double[][] spectrogram) {
+        double[][] copy = spectrogram.clone();
+        for (int i = 0; i < copy.length; i++) {
+            for (int j = 0; j < copy[0].length; j++) {
+                copy[i][j] = Math.min(r.nextGaussian() * 0.0005 + spectrogram[i][j], 0.01);
+            }
+        }
+        return copy;
     }
 
 }

@@ -49,7 +49,13 @@ public class Scraper {
                 count++;
             }
             if (line.contains("\"file-name\"")) {
-                extensions[count - 1] = line.substring(line.length() - 5, line.length() - 2);
+                extensions[count - 1] = line.substring(line.length() - 5, line.length() - 2).toLowerCase();
+            }
+            if (line.contains("\"length\"")) {
+                int mins = Integer.parseInt(line.split(":")[1].replace(" ", "").replaceAll("\"", "").split(":")[0]);
+                if (mins < 1 || mins > 3) {
+                    count--;
+                }
             }
             if (count > limit) {
                 break;
