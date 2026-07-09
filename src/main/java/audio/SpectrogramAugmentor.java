@@ -2,7 +2,9 @@ package main.java.audio;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
@@ -15,9 +17,28 @@ public class SpectrogramAugmentor {
         r = new Random();
     }
 
+    public void createCSV(double[][] spectrogram, String outputDir, String outputName) throws IOException {
+        if (spectrogram[0][0] == -1) {
+            return;
+        }
+
+        File dir = new File(outputDir);
+        dir.mkdirs();
+
+        BufferedWriter bw = new BufferedWriter(new FileWriter(outputDir + outputName));
+
+        for (int y = 0; y < spectrogram.length; y++) {
+            for (int x = 0; x < spectrogram[0].length; x++) {
+                bw.write(spectrogram[y][x] + ",");
+            }
+            bw.newLine();
+        }
+
+        bw.close();
+    }
+
     public void createPNG(double[][] spectrogram, String outputDir) {
         File png = new File(outputDir);
-
 
         if (spectrogram[0][0] == -1) {
             return;

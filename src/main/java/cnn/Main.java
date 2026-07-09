@@ -3,16 +3,16 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        Dataset train = new Dataset("./mnistcsv/mnist_train.csv");
-        Dataset test = new Dataset("./mnistcsv/mnist_test.csv");
+        Dataset train = new Dataset("./spectrograms/csv/grouped.csv");
+        //Dataset test = new Dataset("./spectrograms/csv/grouped.csv");
 
         double[][][] trainImages = train.getData();
-        double[][][] testImages = test.getData();
+        double[][][] testImages = train.getData();
 
         int[] trainLabels = train.getLabel();
-        int[] testLabels = test.getLabel();
+        int[] testLabels = train.getLabel();
 
-        CNN network = new CNN(28);
+        CNN network = new CNN(128, 556  );
         network.setData(trainImages, testImages);
         network.setLabels(trainLabels, testLabels);
 

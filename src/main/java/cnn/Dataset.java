@@ -31,8 +31,8 @@ public class Dataset {
             s.nextLine();
         }
 
-        width = 28;
-        height = 28;
+        width = 128;
+        height = 556;
 
         imageCount = 0;
         while (counter.hasNext()) {
@@ -47,7 +47,7 @@ public class Dataset {
             split = s.nextLine().split(",");
             label[line] = Integer.parseInt(split[0]) + (dir.contains("emnist") ? -1 : 0);
             for (int i = 0; i < split.length - 1; i++) {
-                data[line][(int) Math.floor((i) / height)][(i % width)] = (double) Integer.parseInt(split[i + 1]) / 255;
+                data[line][(int) Math.floor((i) / height)][(i % width)] = Double.parseDouble(split[i+1]);
             }
             line++;
         }

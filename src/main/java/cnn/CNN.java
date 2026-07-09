@@ -14,8 +14,8 @@ public class CNN {
 
     private double[][][] trainImages, testImages;
     private int[] trainLabels, testLabels;
-    private int inputDim;
     private double learningRate;
+    private int inX, inY;
     private String exportName;
     private File importFile, exportFile;
 
@@ -23,17 +23,19 @@ public class CNN {
 //        BufferedReader br = new BufferedReader(new FileReader(importCsvName + ".csv"));
 //    }
 
-    public CNN(int inputDim) {
-        this.inputDim = inputDim;
+    public CNN(int inX, int inY) {
+        this.inX = inX;
+        this.inY = inY;
+
         exportName = "export";
 
         try {
-            c1 = new ConvolutionLayer(inputDim, 1, 8, 3, 1);
+            c1 = new ConvolutionLayer(inX, inY, 1, 8, 3, 1);
             r1 = new ReLU3D();
-            p1 = new MaxPoolLayer(c1.getOutputSize(), c1.getFilterCount(), 2, -1);
-            c2 = new ConvolutionLayer(p1.getOutputSize(), p1.getFilterCount(), 16, 3, 1);
+            p1 = new MaxPoolLayer(c1.getOutX(), c1.getOutY(), c1.getFilterCount(), 2, -1);
+            c2 = new ConvolutionLayer(p1.getOutX(), p1.getOutY(), p1.getFilterCount(), 16, 3, 1);
             r2 = new ReLU3D();
-            p2 = new MaxPoolLayer(c2.getOutputSize(), c2.getFilterCount(), 2, -1);
+            p2 = new MaxPoolLayer(c2.getOutX(), c2.getOutY(), c2.getFilterCount(), 2, -1);
             d1 = new DenseLayer(p2.getFlattenedSize(), 256);
             r3 = new ReLU1D();
             d2 = new DenseLayer(d1.getOutputSize(), 10);
@@ -44,7 +46,7 @@ public class CNN {
     }
 
     private double[] forward(double[][] input) {
-        double[][][] x = new double[1][inputDim][inputDim];
+        double[][][] x = new double[1][inY][inX];
         x[0] = input;
 
         x = c1.forwardPass(x);

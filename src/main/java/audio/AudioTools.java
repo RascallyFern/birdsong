@@ -1,11 +1,11 @@
 package main.java.audio;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Dictionary;
 
 public class AudioTools {
 
@@ -49,7 +49,7 @@ public class AudioTools {
     }
 
     public void getAllPaths(String dir, ArrayList<String> pathList) {
-        if (dir.contains(".wav") | dir.contains(".mp3")) {
+        if (dir.contains(".wav") | dir.contains(".mp3") | dir.contains(".csv")) {
             pathList.add(dir);
             return;
         }
@@ -61,6 +61,57 @@ public class AudioTools {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void groupCSVs(String dir, int fileLimit) throws IOException {
+        BufferedWriter bw = new BufferedWriter(new FileWriter(dir + "/grouped.csv"));
+        BufferedReader br;
+        ArrayList<String> files = new ArrayList<>();
+        getAllPaths(dir, files);
+
+        int count = 0;
+        for (String file : files) {
+            if (fileLimit >= 0 && count > fileLimit) {
+                bw.close();
+                return;
+            }
+            br = new BufferedReader(new FileReader(file));
+            String readLine = br.readLine();
+            String outLine = String.valueOf(getLabel(file)) + ",";
+            while (readLine != null) {
+                outLine += readLine.replace("\n", "");
+                readLine = br.readLine();
+            }
+            bw.write(outLine + "\n");
+            count++;
+        }
+        bw.close();
+    }
+
+    public int getLabel(String dir) {
+        if (dir.contains("BlueTit")) {
+            return 1;
+        } else if (dir.contains("Bullfinch")) {
+            return 2;
+        } else if (dir.contains("CettisWarbler")) {
+            return 3;
+        } else if (dir.contains("Cuckoo")) {
+            return 4;
+        } else if (dir.contains("Goldcrest")) {
+            return 5;
+        } else if (dir.contains("GreatTit")) {
+            return 6;
+        } else if (dir.contains("Jackdaw")) {
+            return 7;
+        } else if (dir.contains("LittleTern")) {
+            return 8;
+        } else if (dir.contains("LongTailedTit")) {
+            return 9;
+        } else if (dir.contains("Magpie")) {
+            return 10;
+        } else {
+            return -1;
         }
     }
 

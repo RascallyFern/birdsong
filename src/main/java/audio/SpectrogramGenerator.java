@@ -84,14 +84,14 @@ public class SpectrogramGenerator {
                 System.arraycopy(spectrogram[y], f * windowStep, window[y], 0, windowLength);
             }
 
-            for (int y = 0; y < spectrogram.length; y++) {
+            for (int y = 0; y < spectrogram.length - 100; y++) {
                 for (int x = 0; x < windowLength; x++) {
                     rsm += window[y][x] * window[y][x];
                 }
             }
             rsm = Math.sqrt(rsm / (spectrogram.length * windowLength));
 
-            if (rsm >= 0.03) {
+            if (rsm >= 0.08) {
                 songs[f] = window.clone();
             } else {
                 songs[f][0][0] = -1;

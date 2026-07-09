@@ -14,23 +14,25 @@ public class ConvolutionLayer {
     private double[][][] output, dOutput;
 
     private double[] bias;
-    private int inputSize, outputSize, filterSize, filterNum, channels, stride;
+    private int inX, inY, outX, outY, filterSize, filterNum, channels, stride;
 
     private Random r = new Random();
 
-    public ConvolutionLayer(int inputSize, int channels, int filterNum, int filterSize, int stride) {
-        initVars(inputSize, channels, filterNum, filterSize, stride);
+    public ConvolutionLayer(int inX, int inY, int channels, int filterNum, int filterSize, int stride) {
+        initVars(inX, inY, channels, filterNum, filterSize, stride);
         initLayer(filterNum);
     }
 
-    private void initVars(int inputSize, int channels, int filterNum, int filterSize, int stride) {
-        this.inputSize = inputSize;
+    private void initVars(int inX, int inY, int channels, int filterNum, int filterSize, int stride) {
         this.filterSize = filterSize;
+        this.inX = inX;
+        this.inY = inY;
         this.filterNum = filterNum;
         this.channels = channels;
         this.stride = stride;
-        this.outputSize = ((inputSize - filterSize) / stride) + 1;
-        output = new double[filterNum][outputSize][outputSize];
+        this.outX = ((inX - filterSize) / stride) + 1;
+        this.outY = ((inY - filterSize) / stride) + 1;
+        output = new double[filterNum][outY][outX];
         filters = new double[filterNum][channels][filterSize][filterSize];
 
         bias = new double[filterNum];
@@ -57,11 +59,11 @@ public class ConvolutionLayer {
         this.input = input;
 
         for (int f = 0; f < filterNum; f++) {
-            for (int outY = 0; outY < outputSize; outY++) {
-                int y = outY * stride;
-                for (int outX = 0; outX < outputSize; outX++) {
+            for (int oY = 0; oY < outY; oY++) {
+                int y = oY * stride;
+                for (int oX = 0; oX < outX; oX++) {
                     double sum = 0;
-                    int x = outX * stride;
+                    int x = oX * stride;
 
                     for (int c = 0; c < channels; c++) {
                         for (int fY = 0; fY < filterSize; fY++) {
@@ -71,7 +73,7 @@ public class ConvolutionLayer {
                         }
                     }
 
-                    output[f][outY][outX] = sum + bias[f];
+                    output[f][oY][oX] = sum + bias[f];
 
                 }
             }
@@ -82,7 +84,7 @@ public class ConvolutionLayer {
 
     public double[][][] backwardPass(double[][][] dOutput, double learningRate) {
         this.dOutput = dOutput;
-        dInput = new double[channels][inputSize][inputSize];
+        dInput = new double[channels][inY][inX];
         double sum;
         int pad = (filterSize - 1);
         double[][][] dOutPadded = new double[dOutput.length][dOutput[0].length + 2 * pad][dOutput[0][0].length + 2 * pad];
@@ -148,7 +150,7 @@ public class ConvolutionLayer {
 
     public void exportToCSV(BufferedWriter bw) throws IOException {
         //int inputSize, int channels, int filterNum, int filterSize, int stride
-        bw.write(String.format("conv,%d,%d,%d,%d,%d\n",inputSize,channels,filterNum,filterSize,stride));
+        bw.write(String.format("conv,%d,%d,%d,%d,%d,%d\n",inX,inY,channels,filterNum,filterSize,stride));
         for (int f = 0; f < filterNum; f++) {
             for (int c = 0; c < channels; c++) {
                 for (int row = 0; row < filterSize; row++) {
@@ -175,7 +177,7 @@ public class ConvolutionLayer {
         }
 
         //int inputSize, int channels, int filterNum, int filterSize, int stride
-        initVars(vars[0], vars[1], vars[2], vars[3], vars[4]);
+        initVars(vars[0], vars[1], vars[2], vars[3], vars[4], vars[5]);
 
         for (int f = 0; f < filterNum; f++) {
             for (int c = 0; c < channels; c++) {
@@ -206,9 +208,11 @@ public class ConvolutionLayer {
         return output;
     }
 
-    public int getOutputSize() {
-        return outputSize;
+    public int getOutX() {
+        return outX;
     }
+
+    public int getOutY() { return outY; }
 
     public int getFilterCount() { return filters.length; }
 }

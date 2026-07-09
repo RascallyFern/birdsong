@@ -8,27 +8,29 @@ import java.util.Arrays;
 public class MaxPoolLayer {
     private double[][][] input, dInput;
     private double[][][] output, dOutput;
-    private int inputSize, channels, filterSize, stride, outputSize;
+    private int inX, inY, channels, filterSize, stride, outX, outY;
 
-    public MaxPoolLayer(int inputSize, int channels, int filterSize, int stride) {
-        initVars(inputSize, channels, filterSize, stride);
+    public MaxPoolLayer(int inX, int inY, int channels, int filterSize, int stride) {
+        initVars(inX, inY, channels, filterSize, stride);
     }
 
-    private void initVars(int inputSize, int channels, int filterSize, int stride) {
-        this.inputSize = inputSize;
+    private void initVars(int inX, int inY, int channels, int filterSize, int stride) {
+        this.inX = inX;
+        this.inY = inY;
         this.channels = channels;
         this.filterSize = filterSize;
         this.stride = (stride > 0 ? stride : filterSize); // e.g. if -1 given then matches filter size
-        this.outputSize = ((inputSize - filterSize) / this.stride) + 1;
-        output = new double[channels][outputSize][outputSize];
+        this.outX = ((inX - filterSize) / this.stride) + 1;
+        this.outY = ((inY - filterSize) / this.stride) + 1;
+        output = new double[channels][outY][outX];
     }
 
     public double[][][] forwardPass(double[][][] input) {
         this.input = input;
 
         for (int c = 0; c < channels; c++) {
-            for (int y = 0; (y/stride) < outputSize; y += stride) {
-                for (int x = 0; (x/stride) < outputSize; x += stride) {
+            for (int y = 0; (y/stride) < outY; y += stride) {
+                for (int x = 0; (x/stride) < outX; x += stride) {
 
                     double max = Double.NEGATIVE_INFINITY;
 
@@ -48,11 +50,11 @@ public class MaxPoolLayer {
 
     public double[][][] backwardPass(double[][][] dOutput) {
         this.dOutput = dOutput;
-        dInput = new double[channels][inputSize][inputSize];
+        dInput = new double[channels][inY][inX];
 
         for (int c = 0; c < channels; c++) {
-            for (int y = 0; (y/stride) < outputSize; y += stride) {
-                for (int x = 0; (x/stride) < outputSize; x += stride) {
+            for (int y = 0; (y/stride) < outY; y += stride) {
+                for (int x = 0; (x/stride) < outX; x += stride) {
 
                     double max = output[c][y/stride][x/stride];
 
@@ -77,19 +79,23 @@ public class MaxPoolLayer {
         return output;
     }
 
-    public int getOutputSize() {
-        return outputSize;
+    public int getOutX() {
+        return outX;
+    }
+
+    public int getOutY() {
+        return outY;
     }
 
     public int getFlattenedSize() {
-        return channels * outputSize * outputSize;
+        return channels * outY * outX;
     }
 
     public int getFilterCount() { return channels; }
 
     public void exportToCSV(BufferedWriter bw) throws IOException {
         //int inputSize, int channels, int filterSize, int stride
-        bw.write(String.format("pool,%d,%d,%d,%d\n",inputSize,channels,filterSize,stride));
+        bw.write(String.format("pool,%d,%d,%d,%d%d\n",outX,outY,channels,filterSize,stride));
     }
 
     public void importFromCSV(BufferedReader br) throws IOException {
@@ -106,6 +112,6 @@ public class MaxPoolLayer {
             vars[i] = Integer.parseInt(split[i+1]);
         }
 
-        initVars(vars[0], vars[1], vars[2], vars[3]);
+        initVars(vars[0], vars[1], vars[2], vars[3], vars[4]);
     }
 }
