@@ -95,7 +95,7 @@ public class MaxPoolLayer {
 
     public void exportToCSV(BufferedWriter bw) throws IOException {
         //int inputSize, int channels, int filterSize, int stride
-        bw.write(String.format("pool,%d,%d,%d,%d%d\n",outX,outY,channels,filterSize,stride));
+        bw.write(String.format("pool,%d,%d,%d,%d,%d\n",inX,inY,channels,filterSize,stride));
     }
 
     public void importFromCSV(BufferedReader br) throws IOException {

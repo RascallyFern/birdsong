@@ -2,7 +2,10 @@ package main.java.cnn;
 import main.java.cnn.layers.*;
 import main.java.cnn.layers.activation.*;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.Arrays;
 
 public class CNN {
     private ConvolutionLayer c1, c2;
@@ -10,7 +13,7 @@ public class CNN {
     private DenseLayer d1, d2;
     private ReLU3D r1, r2;
     private ReLU1D r3;
-    private Sigmoid1D s1;
+    private Softmax s1;
 
     private double[][][] trainImages, testImages;
     private int[] trainLabels, testLabels;
@@ -19,41 +22,38 @@ public class CNN {
     private String exportName;
     private File importFile, exportFile;
 
-//    public CNN(String importCsvName) throws FileNotFoundException {
-//        BufferedReader br = new BufferedReader(new FileReader(importCsvName + ".csv"));
-//    }
-
     public CNN(int inX, int inY) {
         this.inX = inX;
         this.inY = inY;
 
-        exportName = "export";
+        exportName = "exportBirdTest";
 
         try {
-            c1 = new ConvolutionLayer(inX, inY, 1, 8, 3, 1);
+            c1 = new ConvolutionLayer(inX, inY, 1, 20, 3, 1);
             r1 = new ReLU3D();
             p1 = new MaxPoolLayer(c1.getOutX(), c1.getOutY(), c1.getFilterCount(), 2, -1);
-            c2 = new ConvolutionLayer(p1.getOutX(), p1.getOutY(), p1.getFilterCount(), 16, 3, 1);
+            c2 = new ConvolutionLayer(p1.getOutX(), p1.getOutY(), p1.getFilterCount(), 40, 3, 1);
             r2 = new ReLU3D();
             p2 = new MaxPoolLayer(c2.getOutX(), c2.getOutY(), c2.getFilterCount(), 2, -1);
-            d1 = new DenseLayer(p2.getFlattenedSize(), 256);
+            d1 = new DenseLayer(p2.getFlattenedSize(), 128);
             r3 = new ReLU1D();
-            d2 = new DenseLayer(d1.getOutputSize(), 10);
-            s1 = new Sigmoid1D();
+            d2 = new DenseLayer(d1.getOutputSize(), 7);
+            s1 = new Softmax();
         } catch (Exception e) {
             throw new Error("Layers initialised unsuccessfully!");
         }
     }
 
-    private double[] forward(double[][] input) {
+    public double[] forward(double[][] input) {
         double[][][] x = new double[1][inY][inX];
+
         x[0] = input;
 
         x = c1.forwardPass(x);
         x = r1.forwardPass(x);
         x = p1.forwardPass(x);
 
-        x = c2.forwardPass(x);
+        x = c2. forwardPass(x);
         x = r2.forwardPass(x);
         x = p2.forwardPass(x);
 
@@ -106,7 +106,7 @@ public class CNN {
 
         for (int e = 0; e < epochs; e++) {
             System.out.println("\nEpoch " + (e+1) + ": ");
-            learningRate = 0.01 * (1 - ((double) e / epochs));
+            learningRate = 0.005;
 
             test();
 
@@ -126,7 +126,7 @@ public class CNN {
                     System.out.print("\rTraining Progress: " + bar);
                 }
                 predictions = forward(trainImages[i]);
-                backward(Functions.bceGradients(predictions, trainLabels[i]));
+                backward(Functions.ceGradients(predictions, trainLabels[i]));
             }
             System.out.println();
         }
@@ -186,5 +186,49 @@ public class CNN {
         p2.importFromCSV(br);
         d1.importFromCSV(br);
         d2.importFromCSV(br);
+    }
+
+    public void forwardCSV(String dir) throws IOException {
+        File csv = new File(dir);
+        String[] line;
+        BufferedReader br = new BufferedReader(new FileReader(csv));
+
+        double[][] image = new double[128][128];
+
+        for (int i = 0; i < image.length; i++) {
+            line = br.readLine().split(",");
+            for (int j = 0; j < image[0].length; j++) {
+                image[i][j] = Double.parseDouble(line[j]);
+            }
+        }
+
+        System.out.println(Arrays.toString(forward(image)));
+    }
+
+    public static double[][] pngToArray(String path) throws IOException {
+
+        BufferedImage image = ImageIO.read(new File(path));
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        double[][] spectrogram = new double[height][width];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+
+                int rgb = image.getRGB(x, y);
+
+                int red = (rgb >> 16) & 0xFF;
+                int green = (rgb >> 8) & 0xFF;
+                int blue = rgb & 0xFF;
+
+                double value = (red + green + blue) / (3.0 * 255.0);
+
+                spectrogram[height - y - 1][x] = value;
+            }
+        }
+
+        return spectrogram;
     }
 }

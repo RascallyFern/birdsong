@@ -5,8 +5,6 @@ import java.util.ArrayList;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        WavReader wr = new WavReader("./audio/BlueTit/BlueTit_1.wav");
-
         SpectrogramGenerator sg = new SpectrogramGenerator();
         SpectrogramAugmentor sa = new SpectrogramAugmentor();
         AudioTools at = new AudioTools();
@@ -14,30 +12,52 @@ public class Main {
         ArrayList<String> paths = new ArrayList<>();
         at.getAllPaths("./audio", paths);
 
-        at.groupCSVs("./spectrograms/csv", -1);
+        //at.convertAllToWav("./audio");
 
-//        for (String path : paths) {
-//            int count = 1;
-//            for (double[][] snippet : sg.splitIntoSongs(sg.generateSpectrogram(new WavReader(path)))) {
-//                String dir = path.replace("./audio", "./spectrograms/png").replace(".wav", count + ".png");
-//                sa.createPNG(snippet, dir);
-//                count++;
-//            }
-//        }
+        //at.groupCSVs("./spectrograms/csvs48000hz", -1);
 
-//        for (String path : paths) {
-//            int count = 1;
-//            for (double[][] snippet : sg.splitIntoSongs(sg.generateSpectrogram(new WavReader(path)))) {
-//                String fileName = path.split("/")[path.split("/").length - 1];
-//                String dir = path.replace("./audio", "./spectrograms/csv").replace(fileName, "");
-//                sa.createCSV(snippet, dir, fileName.replace(".wav", "~" + count + "~.csv"));
-//                count++;
-//            }
-//
-//        }
 
-//        sa.createPNG(sg.generateSpectrogram(wr), "./spectrograms/withoutnoise.png");
-//        sa.createPNG(sa.addGaussianNoise(sg.generateSpectrogram(wr)), "./spectrograms/withnoise.png");
+        int shifts, noises;
+
+        String dir;
+        for (String path : paths) {
+            if (path.contains("BlueTit")) {
+                shifts = 1; noises = 1;
+            } else if (path.contains("Bullfinch")) {
+                shifts = 3; noises = 3;
+            } else if (path.contains("CettisWarbler") || path.contains("Goldcrest")) {
+                shifts = 2; noises = 3;
+            } else if (path.contains("Cuckoo")) {
+                shifts = 1; noises = 2;
+            } else if (path.contains("GreatTit")) {
+                shifts = 1;
+                noises = 1;
+            } else if (path.contains("noise")) {
+                shifts = 1;
+                noises = 1;
+            } else if (path.contains("Bearded")){
+                continue;
+            } else {
+                continue;
+            }
+
+            int count1 = 1;
+            for (double[][] snippet : sg.splitIntoSongs(sg.generateSpectrogram(new WavReader(path)))) {
+                if (snippet == null) {
+                    continue;
+                }
+
+                int count2 = 1;
+                for (double[][] augmented : sa.generateAugmented(snippet, shifts, noises)) {
+                    dir = path.replace("./audio", "./spectrograms/csvs48000hz").replace(".wav", "-" + count1 + "-" + count2 + ".csv");
+                    sa.createCSV(augmented, dir);
+                    count2++;
+                }
+                count1++;
+            }
+        }
+
+        at.groupCSVs("./spectrograms/csvs48000hz", -1);
 
     }
 }

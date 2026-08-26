@@ -1,7 +1,7 @@
 package main.java.cnn;
 
 public class Functions {
-    public static double[] bceGradients(double[] p, double y) {
+    public static double[] ceGradients(double[] p, double y) {
         // p - predictions, y - actual labels
 
         double[] grad = new double[p.length];
@@ -14,4 +14,5 @@ public class Functions {
 
         return grad;
     }
+
 }

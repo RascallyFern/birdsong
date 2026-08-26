@@ -5,6 +5,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Dictionary;
 
 public class AudioTools {
@@ -14,12 +15,12 @@ public class AudioTools {
     public void convertAllToWav(String path) {
         if (path.toLowerCase().contains(".mp3")) {
             File temp = new File(path.substring(0, path.length() - 3) + "wav");
-            System.out.println(temp.getName());
             temp.delete();
             convertToWav(path);
             File original = new File(path);
             if (original.delete()) {
                 System.out.println("Deleted: " + path);
+                System.out.println("Created: " + temp.getName());
             }
         } else if (!path.contains(".wav")) {
             Path dir = Path.of(path);
@@ -65,58 +66,58 @@ public class AudioTools {
     }
 
     public void groupCSVs(String dir, int fileLimit) throws IOException {
-        BufferedWriter bw = new BufferedWriter(new FileWriter(dir + "/grouped.csv"));
-        BufferedReader br;
         ArrayList<String> files = new ArrayList<>();
         getAllPaths(dir, files);
+        Collections.shuffle(files);
 
-        int count = 0;
-        for (String file : files) {
-            if (fileLimit >= 0 && count > fileLimit) {
-                bw.close();
-                return;
-            }
+        ArrayList<String> test = new ArrayList(files.subList(0, (int) (files.size() * 0.1)));
+        ArrayList<String> train = new ArrayList(files.subList((int) (files.size() * 0.1), files.size()));
+
+        BufferedWriter bwTrain = new BufferedWriter(new FileWriter(dir + "/grouped-train.csv"));
+        BufferedWriter bwTest = new BufferedWriter(new FileWriter(dir + "/grouped-test.csv"));
+        BufferedReader br;
+
+        for (String file : train) {
             br = new BufferedReader(new FileReader(file));
             String readLine = br.readLine();
-            String outLine = String.valueOf(getLabel(file)) + ",";
+            bwTrain.write(String.valueOf(getLabel(file)) + "\n");
             while (readLine != null) {
-                outLine += readLine.replace("\n", "");
+                bwTrain.write(readLine + "\n");
                 readLine = br.readLine();
             }
-            bw.write(outLine + "\n");
-            count++;
         }
-        bw.close();
+        bwTrain.close();
+
+        for (String file : test) {
+            br = new BufferedReader(new FileReader(file));
+            String readLine = br.readLine();
+            bwTest.write(String.valueOf(getLabel(file)) + "\n");
+            while (readLine != null) {
+                bwTest.write(readLine + "\n");
+                readLine = br.readLine();
+            }
+        }
+        bwTest.close();
     }
 
     public int getLabel(String dir) {
         if (dir.contains("BlueTit")) {
-            return 1;
+            return 0;
         } else if (dir.contains("Bullfinch")) {
-            return 2;
+            return 1;
         } else if (dir.contains("CettisWarbler")) {
-            return 3;
+            return 2;
         } else if (dir.contains("Cuckoo")) {
-            return 4;
+            return 3;
         } else if (dir.contains("Goldcrest")) {
-            return 5;
+            return 4;
         } else if (dir.contains("GreatTit")) {
+            return 5;
+        } else if (dir.contains("noise")) {
             return 6;
-        } else if (dir.contains("Jackdaw")) {
-            return 7;
-        } else if (dir.contains("LittleTern")) {
-            return 8;
-        } else if (dir.contains("LongTailedTit")) {
-            return 9;
-        } else if (dir.contains("Magpie")) {
-            return 10;
         } else {
             return -1;
         }
-    }
-
-    public double[][][] separateCalls(double[][] spectrogram) {
-        return null;
     }
 
 }

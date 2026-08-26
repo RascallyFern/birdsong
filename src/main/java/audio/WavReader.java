@@ -18,6 +18,7 @@ public class WavReader {
         wavFile = new File(wavDir);
         init();
         readSamples();
+        System.out.println(wavDir);
     }
 
     private void init() {
@@ -33,19 +34,9 @@ public class WavReader {
     private AudioInputStream createDecodedStream() {
         try {
             AudioInputStream originalStream = AudioSystem.getAudioInputStream(wavFile);
-            AudioFormat originalFormat = originalStream.getFormat();
+            AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 48000, 16, 1, 2, 48000, false);
 
-            AudioFormat decodedFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    originalFormat.getSampleRate(),
-                    16,
-                    originalFormat.getChannels(),
-                    originalFormat.getChannels() * 2,
-                    originalFormat.getSampleRate(),
-                    false
-            );
-
-            return AudioSystem.getAudioInputStream(decodedFormat, originalStream);
+            return AudioSystem.getAudioInputStream(targetFormat, originalStream);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -64,7 +55,7 @@ public class WavReader {
 
                 short sample = (short) ((high << 8) | low);
 
-                samples[i] = sample / 32768f;
+                samples[i] = sample / 32768.0;
             }
 
         } catch (Exception e) {

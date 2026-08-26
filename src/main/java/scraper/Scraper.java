@@ -52,7 +52,9 @@ public class Scraper {
                 extensions[count - 1] = line.substring(line.length() - 5, line.length() - 2).toLowerCase();
             }
             if (line.contains("\"length\"")) {
-                int mins = Integer.parseInt(line.split(":")[1].replace(" ", "").replaceAll("\"", "").split(":")[0]);
+                String[] dur = line.split(":")[1].replace(" ", "").replaceAll("\"", "").split(":");
+                int mins = Integer.parseInt(dur[0]);
+                //int secs = Integer.parseInt(dur[1]);
                 if (mins < 1 || mins > 3) {
                     count--;
                 }

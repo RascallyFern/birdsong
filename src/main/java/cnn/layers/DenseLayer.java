@@ -89,6 +89,7 @@ public class DenseLayer {
             for (int j = 0; j < inHeight; j++) {
                 for (int k = 0; k < inWidth; k++) {
                     output[i][j][k] = input[count];
+                    count++;
                 }
             }
         }
@@ -102,12 +103,6 @@ public class DenseLayer {
 
     public double[] backwardPass1D(double[] dOutput, double learningRate) {
         dInput = new double[inputSize];
-
-        double clip = 1;
-        for (int i = 0; i < dOutput.length; i++) {
-            dOutput[i] = (dOutput[i] > clip ? clip : dOutput[i]);
-            dOutput[i] = (dOutput[i] < -clip ? -clip : dOutput[i]);
-        }
         this.dOutput = dOutput;
 
         //w.r.t bias
