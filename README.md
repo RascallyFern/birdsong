@@ -22,9 +22,9 @@ A Convolutional Neural Network from scratch in Java to classify birdsong for my 
 * \[x] Fully Connected / Dense Layer
 * \[x] Backpropagation
 * \[x] Training loop
+* \[x] STFT implementation (.wav to spectrogram)
+* \[x] Dataset scraping
 * \[ ] Android App
-* \[ ] STFT implementation (.wav to spectrogram)
-* \[ ] Dataset scraping
 
 
 
