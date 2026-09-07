@@ -1,7 +1,9 @@
 package main.java.detector;
 
+import main.java.audio.SpectrogramAugmentor;
 import main.java.audio.SpectrogramGenerator;
-import main.java.cnn.CNN;
+import main.java.cnn.networks.CNNConv2;
+import main.java.cnn.networks.CNNConv3;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -12,8 +14,9 @@ import java.util.Arrays;
 public class LiveDetector {
 
     private Microphone mic;
-    private CNN network;
+    private CNNConv3 network;
     private SpectrogramGenerator sg;
+    private SpectrogramAugmentor sa;
     private int sampleRate;
     private int windowLength;
     private int stepSize;
@@ -21,14 +24,15 @@ public class LiveDetector {
 
     public LiveDetector() throws Exception {
         mic = new Microphone();
-        network = new CNN(128, 128);
+        network = new CNNConv3(128, 128);
         sg = new SpectrogramGenerator();
+        sa = new SpectrogramAugmentor();
         sampleRate = mic.getSampleRate();
         windowLength = (int) (1.5 * sampleRate);
         stepSize = (int) (0.5 * sampleRate);
         buffer = new double[windowLength];
 
-        loadNetwork("./exportBirdTest.csv");
+        loadNetwork("./exportBirdsLargeDecayConv3.csv");
     }
 
     private void loadNetwork(String exportDir) {
@@ -48,12 +52,20 @@ public class LiveDetector {
         while (true) {
             double[] newSamples = mic.record(stepSize);
 
-            System.arraycopy(buffer, stepSize, buffer, 0, windowLength - stepSize);
-            System.arraycopy(newSamples, 0, buffer, windowLength - stepSize, stepSize);
+            if (collected < windowLength) {
+                System.arraycopy(newSamples, 0, buffer, collected, Math.min(newSamples.length, windowLength - collected));
 
-            collected += stepSize;
+                collected += stepSize;
 
-            if (collected >= windowLength) {
+                if (collected < windowLength) {
+                    continue;
+                }
+
+                detect(buffer);
+            } else {
+                System.arraycopy(buffer, stepSize, buffer, 0, windowLength - stepSize);
+                System.arraycopy(newSamples, 0, buffer, windowLength - stepSize, stepSize);
+
                 detect(buffer);
             }
         }
@@ -71,19 +83,11 @@ public class LiveDetector {
             for (int x = 0; x < width; x++) {
 
                 int value = (int) (spectrogram[y][x] * 255);
-
                 value = Math.max(0, Math.min(255, value));
 
-                int rgb =
-                        (value << 16) |
-                                (value << 8) |
-                                value;
+                int rgb = (value << 16) | (value << 8) | value;
 
-                image.setRGB(
-                        x,
-                        height - y - 1,
-                        rgb
-                );
+                image.setRGB(x, height - y - 1, rgb);
             }
         }
 
@@ -95,8 +99,20 @@ public class LiveDetector {
     }
 
     private void detect(double[] samples) {
-        double[][] spectrogram = sg.generateSpectrogram(samples, sampleRate);
-        getFullLabel(network.forward(spectrogram));
+        if (!containsSound(samples)) {
+            System.out.print("\rNoise");
+            return;
+        }
+
+        double[][] spectrogram = sa.flipSpectrogram(sg.generateSpectrogram(samples, sampleRate));
+        double[] predictions = network.forward(spectrogram);
+        String prediction = getFullLabel(predictions);
+
+        if (!prediction.equals("Noise")) {
+            System.out.println("Prediction: " + prediction);
+            System.out.println(Arrays.toString(predictions) + "\n");
+        }
+
         try {
             saveSpectrogram(spectrogram);
         } catch (Exception e) {
@@ -105,17 +121,28 @@ public class LiveDetector {
 
     }
 
-    private double getRMS(double[] samples) {
-        double sum = 0;
+    private boolean containsSound(double[] samples) {
+        int chunkSize = sampleRate / 10;
 
-        for (double sample : samples) {
-            sum += sample * sample;
+        for (int start = 0; start < samples.length; start++) {
+            int end = Math.min(start + chunkSize, samples.length);
+            double sum = 0;
+
+            for (int i = start; i < end; i++) {
+                sum += samples[i] * samples[i];
+            }
+
+            double rms = Math.sqrt(sum / (end - start));
+
+            if (rms >= 0.01) {
+                return true;
+            }
         }
 
-        return Math.sqrt(sum / samples.length);
+        return false;
     }
 
-    private void getFullLabel(double[] predictions) {
+    public String getFullLabel(double[] predictions) {
         int label = 0;
         double max = 0;
 
@@ -126,31 +153,32 @@ public class LiveDetector {
             }
         }
 
-
-        switch (label) {
-            case 6:
-                System.out.println("Blue Tit");
-                break;
-            case 0:
-                System.out.println("Bullfinch");
-                break;
-            case 1:
-                System.out.println("Cetti's Warbler");
-                break;
-            case 2:
-                System.out.println("Cuckoo");
-                break;
-            case 3:
-                System.out.println("Goldcrest");
-                break;
-            case 4:
-                System.out.println("Great Tit");
-                break;
-            case 5:
-                System.out.println("Noise");
-                break;
-            default:
-                break;
+        if (max > 0.98) {
+            return switch (label) {
+                case 0 -> "Bearded Reedling";
+                case 1 -> "Black Headed Gull";
+                case 2 -> "BlueTit";
+                case 3 -> "Bullfinch";
+                case 4 -> "Cetti's Warbler";
+                case 5 -> "Cuckoo";
+                case 6 -> "Goldcrest";
+                case 7 -> "GreatTit";
+                case 8 -> "Jackdaw";
+                case 9 -> "Little Tern";
+                case 10 -> "Long Tailed Tit";
+                case 11 -> "Magpie";
+                case 12 -> "Mallard";
+                case 13 -> "Yellowhammer";
+                case 14 -> "Robin";
+                case 15 -> "Swift";
+                case 16 -> "Willow Tit";
+                case 17 -> "Great Crested Grebe";
+                case 18 -> "Kingfisher";
+                case 19 -> "Noise";
+                default -> "Error";
+            };
+        } else {
+            return "Noise";
         }
     }
 

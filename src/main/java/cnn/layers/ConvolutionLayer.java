@@ -107,7 +107,6 @@ public class ConvolutionLayer {
                         sum = 0;
                         for (int wY = 0; wY < filterSize; wY++) {
                             for (int wX = 0; wX < filterSize; wX++) {
-                                //flip filters for backprop
                                 sum += dOutPadded[f][y + wY][x + wX] * filters[f][c][wY][wX];
                             }
                         }

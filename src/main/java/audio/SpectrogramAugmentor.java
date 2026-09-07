@@ -146,4 +146,16 @@ public class SpectrogramAugmentor {
 
         return augmented;
     }
+
+    public double[][] flipSpectrogram(double[][] input) {
+        double[][] out = new double[input.length][input[0].length];
+
+        for (int y = 0; y < input.length; y++) {
+            for (int x = 0; x < input[0].length; x++) {
+                out[out.length - y - 1][x] = input[y][x];
+            }
+        }
+
+        return out;
+    }
 }

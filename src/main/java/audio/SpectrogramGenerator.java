@@ -24,7 +24,6 @@ public class SpectrogramGenerator {
     public double[][] generateSpectrogram(double[] samples, int sampleRate) {
         this.samples = samples;
         this.sampleRate = sampleRate;
-
         buildMelFilterbank();
 
         int frames = ((samples.length - windowSize) / hopSize) + 1;
@@ -43,12 +42,11 @@ public class SpectrogramGenerator {
         double minVal = 0.0;
         double maxVal = 10.0;
 
+
         for (int y = 0; y < melBands; y++) {
             for (int x = 0; x < frames; x++) {
-                double val = image[y][x];
-                val = (val - minVal) / (maxVal - minVal);
-                val = Math.max(0.0, Math.min(1.0, val));
-                image[y][x] = val;
+                image[y][x] = (image[y][x] - minVal) / (maxVal - minVal);
+                image[y][x] = Math.max(0.0, Math.min(1.0, image[y][x]));
             }
         }
 
@@ -140,6 +138,7 @@ public class SpectrogramGenerator {
                     }
                 }
             }
+
             rsmTop = Math.sqrt(rsmTop / ((spectrogram.length - boundary) * windowLength));
             rsmBottom = Math.sqrt(rsmBottom / (boundary * windowLength));
 

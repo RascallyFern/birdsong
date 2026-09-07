@@ -1,44 +1,56 @@
-package main.java.cnn;
-import main.java.cnn.layers.*;
-import main.java.cnn.layers.activation.*;
+package main.java.cnn.networks;
+
+import main.java.cnn.Functions;
+import main.java.cnn.layers.ConvolutionLayer;
+import main.java.cnn.layers.DenseLayer;
+import main.java.cnn.layers.MaxPoolLayer;
+import main.java.cnn.layers.activation.ReLU1D;
+import main.java.cnn.layers.activation.ReLU3D;
+import main.java.cnn.layers.activation.Sigmoid1D;
+import main.java.cnn.layers.activation.Softmax;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Arrays;
 
-public class CNN {
-    private ConvolutionLayer c1, c2;
-    private MaxPoolLayer p1, p2;
+public class CNNConv3 {
+    private ConvolutionLayer c1, c2, c3;
+    private MaxPoolLayer p1, p2, p3;
     private DenseLayer d1, d2;
-    private ReLU3D r1, r2;
-    private ReLU1D r3;
-    private Softmax s1;
+    private ReLU3D r1, r2, r3;
+    private ReLU1D r4;
+    private Sigmoid1D s1;
 
     private double[][][] trainImages, testImages;
     private int[] trainLabels, testLabels;
-    private double learningRate;
+    private double initialLearningRate, learningRate, decayRate;
     private int inX, inY;
     private String exportName;
     private File importFile, exportFile;
 
-    public CNN(int inX, int inY) {
+    public CNNConv3(int inX, int inY) {
         this.inX = inX;
         this.inY = inY;
 
-        exportName = "exportBirdTest";
+        exportName = "exportBirdsLargeDecayConv3";
+        initialLearningRate = 0.005;
+        decayRate = 0.90;
 
         try {
-            c1 = new ConvolutionLayer(inX, inY, 1, 20, 3, 1);
+            c1 = new ConvolutionLayer(inX, inY, 1, 16, 3, 1);
             r1 = new ReLU3D();
             p1 = new MaxPoolLayer(c1.getOutX(), c1.getOutY(), c1.getFilterCount(), 2, -1);
-            c2 = new ConvolutionLayer(p1.getOutX(), p1.getOutY(), p1.getFilterCount(), 40, 3, 1);
+            c2 = new ConvolutionLayer(p1.getOutX(), p1.getOutY(), p1.getFilterCount(), 32, 3, 1);
             r2 = new ReLU3D();
             p2 = new MaxPoolLayer(c2.getOutX(), c2.getOutY(), c2.getFilterCount(), 2, -1);
-            d1 = new DenseLayer(p2.getFlattenedSize(), 128);
-            r3 = new ReLU1D();
-            d2 = new DenseLayer(d1.getOutputSize(), 7);
-            s1 = new Softmax();
+            c3 = new ConvolutionLayer(p2.getOutX(), p2.getOutY(), p2.getFilterCount(), 64, 3, 1);
+            r3 = new ReLU3D();
+            p3 = new MaxPoolLayer(c3.getOutX(), c3.getOutY(), c3.getFilterCount(), 2, -1);
+            d1 = new DenseLayer(p3.getFlattenedSize(), 128);
+            r4 = new ReLU1D();
+            d2 = new DenseLayer(d1.getOutputSize(), 20);
+            s1 = new Sigmoid1D();
         } catch (Exception e) {
             throw new Error("Layers initialised unsuccessfully!");
         }
@@ -57,8 +69,12 @@ public class CNN {
         x = r2.forwardPass(x);
         x = p2.forwardPass(x);
 
+        x = c3.forwardPass(x);
+        x = r3.forwardPass(x);
+        x = p3.forwardPass(x);
+
         double[] y = d1.forwardPass(x);
-        y = r3.forwardPass(y);
+        y = r4.forwardPass(y);
         y = d2.forwardPass(y);
         y = s1.forwardPass(y);
 
@@ -67,9 +83,12 @@ public class CNN {
 
     private void backward(double[] loss) {
         double[] x = d2.backwardPass1D(loss, learningRate);
-        x = r3.backwardPass(x);
+        x = r4.backwardPass(x);
 
         double[][][] y = d1.backwardPass3D(x, learningRate);
+        y = p3.backwardPass(y);
+        y = r3.backwardPass(y);
+        y = c3.backwardPass(y, learningRate);
         y = p2.backwardPass(y);
         y = r2.backwardPass(y);
         y = c2.backwardPass(y, learningRate);
@@ -92,23 +111,28 @@ public class CNN {
 
         double acc = (double) correct / testImages.length;
 
-        System.out.println("Current Accuracy: " + acc);
+        System.out.println("Initial Accuracy: " + acc);
     }
 
     public void train(int epochs) {
         double[] predictions;
+
         //how much progress bar increments
         int percent = 4;
         int percentMag = trainImages.length / (100 / percent);
         int count;
 
         StringBuilder bar;
+        long totalStartTime = System.nanoTime();
+        long epochTimeTotal = 0;
 
         for (int e = 0; e < epochs; e++) {
-            System.out.println("\nEpoch " + (e+1) + ": ");
-            learningRate = 0.005;
 
+            learningRate = initialLearningRate * Math.pow(decayRate, e);
+            System.out.println("\nEpoch " + (e+1) + " (Learning Rate: " + learningRate + "): ");
             test();
+
+            long epochStartTime = System.nanoTime();
 
             count = 0;
             for (int i = 0; i < trainImages.length; i++) {
@@ -129,9 +153,20 @@ public class CNN {
                 backward(Functions.ceGradients(predictions, trainLabels[i]));
             }
             System.out.println();
+
+            long epochEndTime = System.nanoTime();
+            double epochTime = (epochEndTime - epochStartTime) / 60000000000.0; //mins
+            epochTimeTotal += (epochEndTime - epochStartTime);
+            System.out.printf("Epoch %d completed in %.2f mins.\n", e + 1, epochTime);
         }
 
         test();
+
+        long totalEndTime = System.nanoTime();
+        double totalTime = (totalEndTime - totalStartTime) / 60000000000.0;
+        double avgEpochTime = (epochTimeTotal / (double) epochs) / 60000000000.0;
+
+        System.out.printf("\nTraining complete!\nTotal training time: %.2f mins\nAverage epoch time: %.2f mins", totalTime, avgEpochTime);
     }
 
     public int mostConfidence(double[] predictions) {
@@ -162,8 +197,7 @@ public class CNN {
         exportFile = new File(exportName + ".csv");
 
         if (!exportFile.createNewFile()) {
-            System.out.println("File with this name already exists!");
-            return;
+            System.out.printf("\n\nFile with name \"%s\" already exists! Overwriting file.", exportFile + ".csv");
         }
 
         BufferedWriter bw = new BufferedWriter(new FileWriter(exportFile));
@@ -171,6 +205,8 @@ public class CNN {
         p1.exportToCSV(bw);
         c2.exportToCSV(bw);
         p2.exportToCSV(bw);
+        c3.exportToCSV(bw);
+        p3.exportToCSV(bw);
         d1.exportToCSV(bw);
         d2.exportToCSV(bw);
         bw.close();
@@ -184,6 +220,8 @@ public class CNN {
         p1.importFromCSV(br);
         c2.importFromCSV(br);
         p2.importFromCSV(br);
+        c3.importFromCSV(br);
+        p3.importFromCSV(br);
         d1.importFromCSV(br);
         d2.importFromCSV(br);
     }

@@ -5,6 +5,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Dictionary;
 
@@ -13,21 +14,37 @@ public class AudioTools {
     private ArrayList<String> paths;
 
     public void convertAllToWav(String path) {
-        if (path.toLowerCase().contains(".mp3")) {
-            File temp = new File(path.substring(0, path.length() - 3) + "wav");
-            temp.delete();
-            convertToWav(path);
-            File original = new File(path);
-            if (original.delete()) {
-                System.out.println("Deleted: " + path);
-                System.out.println("Created: " + temp.getName());
-            }
-        } else if (!path.contains(".wav")) {
-            Path dir = Path.of(path);
+        String lower = path.toLowerCase();
 
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+        if (lower.endsWith(".mp3") || lower.endsWith(".wav")) {
+            File input = new File(path);
+            String basePath = path.substring(0, path.lastIndexOf('.'));
+
+            File temp = new File(basePath + "_temp.wav");
+            File output = new File(basePath + ".wav");
+
+            if (temp.exists()) {
+                temp.delete();
+            }
+
+            File converted = convertToWav(path, temp.getPath());
+
+            if (converted != null && converted.exists()) {
+                if (input.delete()) {
+                    if (temp.renameTo(output)) {
+                        System.out.println("Converted: " + path);
+                    } else {
+                        System.out.println("Could not rename: " + temp.getPath());
+                    }
+                } else {
+                    System.out.println("Could not delete: " + path);
+                    temp.delete();
+                }
+            }
+        } else if (Files.isDirectory(Path.of(path))) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of(path))) {
                 for (Path file : stream) {
-                    convertAllToWav(path + "/" + file.getFileName());
+                    convertAllToWav(file.toString());
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -35,47 +52,82 @@ public class AudioTools {
         }
     }
 
-    private File convertToWav(String mp3Dir) {
-        String wavDir = mp3Dir.substring(0, mp3Dir.length() - 4) + ".wav";
-        ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-i", mp3Dir, "-acodec", "pcm_s16le", wavDir);
+    private File convertToWav(String inputPath, String outputPath) {
+        ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-y", "-i", inputPath, "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", outputPath);
+
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
         try {
             Process p = pb.start();
-            p.waitFor();
+            int exitCode = p.waitFor();
+
+            if (exitCode != 0) {
+                System.out.println("FFmpeg failed: " + inputPath);
+                return null;
+            }
+
+            return new File(outputPath);
+
         } catch (IOException | InterruptedException e) {
-            System.out.println(e);
+            System.out.println("FFmpeg error: " + e);
             return null;
         }
-
-        return new File(wavDir);
     }
 
     public void getAllPaths(String dir, ArrayList<String> pathList) {
-        if (dir.contains(".wav") | dir.contains(".mp3") | dir.contains(".csv")) {
-            pathList.add(dir);
+        Path path = Path.of(dir);
+
+        if (Files.isRegularFile(path)) {
+            String fileName = path.getFileName().toString().toLowerCase();
+
+            if (fileName.endsWith(".wav") ||
+                    fileName.endsWith(".mp3") ||
+                    fileName.endsWith(".csv")) {
+
+                pathList.add(path.toString());
+            }
+
             return;
         }
 
-        Path p = Path.of(dir);
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
+        if (!Files.isDirectory(path)) {
+            return;
+        }
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path file : stream) {
-                getAllPaths(dir + "/" + file.getFileName(), pathList);
+                getAllPaths(file.toString(), pathList);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void groupCSVs(String dir, int fileLimit) throws IOException {
+    public void groupCSVs(String dir) throws IOException {
         ArrayList<String> files = new ArrayList<>();
         getAllPaths(dir, files);
-        Collections.shuffle(files);
+        int[] counts = new int[20];
 
-        ArrayList<String> test = new ArrayList(files.subList(0, (int) (files.size() * 0.1)));
-        ArrayList<String> train = new ArrayList(files.subList((int) (files.size() * 0.1), files.size()));
+        ArrayList<String> train = new ArrayList<>();
+        ArrayList<String> test = new ArrayList<>();
 
         BufferedWriter bwTrain = new BufferedWriter(new FileWriter(dir + "/grouped-train.csv"));
         BufferedWriter bwTest = new BufferedWriter(new FileWriter(dir + "/grouped-test.csv"));
         BufferedReader br;
+
+        for (String file : files) {
+            int index = getLabel(file);
+            if (index >= 0) {
+                if (counts[index] < 150) {
+                    test.add(file);
+                    counts[index]++;
+                } else {
+                    train.add(file);
+                }
+            }
+        }
+
+        Collections.shuffle(train);
 
         for (String file : train) {
             br = new BufferedReader(new FileReader(file));
@@ -101,21 +153,48 @@ public class AudioTools {
     }
 
     public int getLabel(String dir) {
-        if (dir.contains("BlueTit")) {
+        if (dir.contains("BeardedReedling")) {
             return 0;
-        } else if (dir.contains("Bullfinch")) {
+        } else if (dir.contains("BlackHeadedGull")) {
             return 1;
-        } else if (dir.contains("CettisWarbler")) {
+        } else if (dir.contains("BlueTit")) {
             return 2;
-        } else if (dir.contains("Cuckoo")) {
+        } else if (dir.contains("Bullfinch")) {
             return 3;
-        } else if (dir.contains("Goldcrest")) {
+        } else if (dir.contains("CettisWarbler")) {
             return 4;
-        } else if (dir.contains("GreatTit")) {
+        } else if (dir.contains("Cuckoo")) {
             return 5;
-        } else if (dir.contains("noise")) {
+        } else if (dir.contains("Goldcrest")) {
             return 6;
+        } else if (dir.contains("GreatTit")) {
+            return 7;
+        } else if (dir.contains("Jackdaw")) {
+            return 8;
+        }  else if (dir.contains("LittleTern")) {
+            return 9;
+        } else if (dir.contains("LongTailedTit")) {
+            return 10;
+        } else if (dir.contains("Magpie")) {
+            return 11;
+        } else if (dir.contains("Mallard")) {
+            return 12;
+        } else if (dir.contains("Yellowhammer")) {
+            return 13;
+        } else if (dir.contains("Robin")) {
+            return 14;
+        } else if (dir.contains("Swift")) {
+            return 15;
+        } else if (dir.contains("WillowTit")) {
+            return 16;
+        } else if (dir.contains("GreatCrestedGrebe")) {
+            return 17;
+        } else if (dir.contains("Kingfisher")) {
+            return 18;
+        } else if (dir.contains("noise")) {
+            return 19;
         } else {
+            System.out.println("Error retrieving label!");
             return -1;
         }
     }

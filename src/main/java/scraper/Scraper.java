@@ -2,12 +2,14 @@ package main.java.scraper;
 
 import java.io.*;
 import java.net.URL;
+import java.util.Arrays;
 
 public class Scraper {
 
-    private String key, endpoint, outputName, data;
+    private String key, endpoint, outputName, data, url;
+    private String genus, species, subspecies, sampleRate;
     private String[] downloadUrls, extensions;
-    private int files, limit;
+    private int files, limit, prevCount;
 
     public Scraper() {
         key = System.getenv("XENOCANTO");
@@ -17,20 +19,43 @@ public class Scraper {
         outputName = "";
     }
 
-    public void scrape(String[] queries) throws IOException {
-        String url = endpoint;
-        String fileUrl;
+    public void setQueries(String genus, String species, String subspecies, String sampleRate) {
+        url = endpoint;
 
-        File dir = new File("./audio");
-        if (!dir.exists()) {
-            dir.mkdir();
+        this.genus = genus;
+        this.species = species;
+        this.subspecies = subspecies;
+        this.sampleRate = sampleRate;
+
+        if (!genus.isEmpty()) {
+            url += "gen:" + genus + "+";
         }
-
-        for (String q : queries) {
-            url += (q + "+");
+        if (!species.isEmpty()) {
+            url += "sp:" + species + "+";
+        }
+        if (!subspecies.isEmpty()) {
+            url += "ssp:" + subspecies + "+";
+        }
+        if (!sampleRate.isEmpty()) {
+            url += "smp:" + sampleRate + "+";
         }
 
         url = url.substring(0, url.length() - 1) + "&per_page=1000&key=" + key;
+    }
+
+    public void setSubspecies(String ssp) {
+        if (!subspecies.isEmpty()) {
+            url = url.replace(subspecies, ssp);
+        } else {
+            url = url.replace("&per_page=1000&key=" + key, "+" + ssp + "&per_page=1000&key=" + key);
+        }
+    }
+
+    public void scrape(int minMins, int maxMins, int fileLimit) throws IOException {
+        scrape(1, minMins, maxMins, fileLimit);
+    }
+
+    public void scrape(int start, int minMins, int maxMins, int fileLimit) throws IOException {
 
         InputStream is = new URL(url).openStream();
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
@@ -52,22 +77,31 @@ public class Scraper {
                 extensions[count - 1] = line.substring(line.length() - 5, line.length() - 2).toLowerCase();
             }
             if (line.contains("\"length\"")) {
-                String[] dur = line.split(":")[1].replace(" ", "").replaceAll("\"", "").split(":");
-                int mins = Integer.parseInt(dur[0]);
-                //int secs = Integer.parseInt(dur[1]);
-                if (mins < 1 || mins > 3) {
+                String[] time = line.split("\":\"")[1].replace(" ", "").replaceAll("[\",]", "").split(":");
+
+                int mins = Integer.parseInt(time[0]);
+                int secs = Integer.parseInt(time[1]);
+
+                if (((minMins > 0) && (mins < minMins)) || ((maxMins > 0) && (mins > maxMins)) || (mins == 0 && secs < 10)) {
                     count--;
                 }
             }
-            if (count > limit) {
-                break;
+
+            if (fileLimit > 0) {
+                if (count > fileLimit) {
+                    break;
+                }
             }
         }
 
+        prevCount = count;
+
         for (int i = 0; i < count - 1; i++) {
-            download(downloadUrls[i], extensions[i], String.valueOf(i + 1));
+            download(downloadUrls[i], extensions[i], String.valueOf(i + start));
         }
     }
+
+    public int getPrevCount() { return prevCount; }
 
     private String readAll(BufferedReader br) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -84,7 +118,7 @@ public class Scraper {
 
             File dir = new File("./audio/" + outputName);
             if (!dir.exists()) {
-                dir.mkdir();
+                dir.mkdirs();
             }
 
             FileOutputStream fos = new FileOutputStream("./audio/" + outputName + "/" + outputName + "_" + label + "." + extension);
@@ -99,8 +133,10 @@ public class Scraper {
             System.out.println("File " + outputName + "_" + label + "." + extension + " downloaded successfully.");
 
         } catch (IOException e) {
-            System.out.println("Error downloading from: " + url);
-        }
+        System.out.println("Error downloading from: " + url);
+        System.out.println("Reason: " + e.getMessage());
+        e.printStackTrace();
+    }
     }
 
     public void setOutputName(String name) {
